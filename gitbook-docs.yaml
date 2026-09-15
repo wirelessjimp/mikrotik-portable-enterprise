@@ -1,59 +1,11 @@
-structure:
-  readme: README.md
-  pages:
-    - title: "Lab 01 — Initial Configuration"
-      path: labs/lab-01.md
-    - title: "Lab 02 — Packages & Extra Features"
-      path: labs/lab-02.md
-    - title: "Lab 03 — Backup & Restore"
-      path: labs/lab-03.md
-    - title: "Lab 04 — USB Storage"
-      path: labs/lab-04.md
-    - title: "Lab 05 — Containers"
-      path: labs/lab-05.md
-    - title: "Lab 06 — MAC Access & Discovery"
-      path: labs/lab-06.md
-    - title: "Lab 07 — Bridges & VLANs"
-      path: labs/lab-07.md
-    - title: "Lab 08 — DHCP Server"
-      path: labs/lab-08.md
-    - title: "Lab 09 — DNS"
-      path: labs/lab-09.md
-    - title: "Lab 10 — Firewall"
-      path: labs/lab-10.md
-    - title: "Lab 11 — Wireless AP"
-      path: labs/lab-11.md
-    - title: "Lab 12 — User Manager & RADIUS"
-      path: labs/lab-12.md
-    - title: "Lab 13 — WireGuard Server"
-      path: labs/lab-13.md
-    - title: "Lab 14 — WireGuard Clients"
-      path: labs/lab-14.md
-    - title: "Lab 15 — Cloud & Back to Home"
-      path: labs/lab-15.md
-    - title: "Lab 16 — Adding Gear"
-      path: labs/lab-16.md
-    - title: "Lab 17 — ICX Switch Integration"
-      path: labs/lab-17.md
-    - title: "Lab 18 — RUCKUS AP Integration"
-      path: labs/lab-18.md
-    - title: "Lab 19 — AP Configuration"
-      path: labs/lab-19.md
-    - title: "Lab 20 — Traffic Analysis"
-      path: labs/lab-20.md
-    - title: "Lab 21 — Useful Tools"
-      path: labs/lab-21.md
-    - title: "Lab 22 — Media Center"
-      path: labs/lab-22.md
-    - title: "Lab 23 — Time & NTP"
-      path: labs/lab-23.md
-    - title: "Lab 24 — WAN Sources"
-      path: labs/lab-24.md
-    - title: "Lab 25 — Dual WAN Failover"
-      path: labs/lab-25.md
-    - title: "Lab 26 — Hotspot & Captive Portal"
-      path: labs/lab-26.md
-    - title: "Lab 27 — DNS Advanced"
-      path: labs/lab-27.md
-    - title: "Lab 28 — Administrative Tasks"
-      path: labs/lab-28.md
+$schema: https://api.gitbook.com/openapi.yaml#/components/schemas/GitSyncSiteConfig
+site:
+  title: Full Stack Networking for the Price of a Bar Tab
+  structure:
+    - type: space
+      key: labs
+      title: Lab Guide
+      path: .
+      default: true
+      content:
+        directory: ./
