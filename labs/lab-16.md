@@ -1,9 +1,3 @@
-# MikroTik Lab Guide — Lab 16
-
-*Continuation of the MikroTik Enterprise Networking Lab Guide*
-
----
-
 # Lab 16 — Second MikroTik Device (mAP)
 
 *Prerequisites: Lab 7 (trunk ports configured), Lab 12 (WireGuard server), Lab 6 (backup completed)*
