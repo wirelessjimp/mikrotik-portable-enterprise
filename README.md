@@ -33,33 +33,47 @@ By the end of this guide, your MikroTik is:
 - A RADIUS server (User Manager) for WPA2-Enterprise authentication
 - A container host running speed test and network testing tools
 - A DNS server with ad blocking
+- A captive portal for guest access
+- A dual-WAN failover router with automatic backup
 - A portable demo platform you can deploy anywhere
 
 ## Guide Structure
 
 Each lab is a standalone module with prerequisites listed at the top. Follow them in order for a complete build, or jump to what you need if you already have a running config.
 
-### Labs 1-6 — Foundation
-Initial setup, packages, USB storage, containers, DNS, and backup.
+**Labs 01-06 — Foundation**
+Initial setup, packages, USB storage, containers, MAC access, and backup.
 
-### Labs 7-10 — VLANs and Infrastructure
+**Labs 07-10 — VLANs and Infrastructure**
 Single-bridge VLAN filtering, DHCP, port testing, and firewall isolation.
 
-### Labs 11-15 — Security and VPN
-RADIUS/WPA2-Enterprise, WireGuard server and clients, User Manager.
+**Labs 11-15 — Security and VPN**
+Wireless AP, RADIUS/WPA2-Enterprise, WireGuard server and clients, Cloud and Back to Home.
 
-### Lab 16 — Second Device (mAP)
+**Lab 16 — Second Device (mAP)**
 Setting up the mAP as a managed AP, trunk endpoint, and travel router.
 
-### Labs 17-27 — Advanced Topics *(coming soon)*
-Enterprise switch integration, dual-WAN, ad blocking, cloud management, and more.
+**Labs 17-19 — Enterprise Integration**
+ICX switch integration, RUCKUS AP integration, and AP configuration.
+
+**Labs 20-23 — Tools and Services**
+Traffic analysis, TFTP/FTP/graphing, DLNA/SMB media server, and NTP.
+
+**Labs 24-26 — WAN and Guest Access**
+WAN sources (USB tethering, cellular, Wi-Fi client mode), dual-WAN failover, and hotspot captive portal.
+
+**Lab 27 — DNS Advanced**
+Static entries, DNS over HTTPS, and ad blocking.
+
+**Lab 28 — Administrative Tasks**
+Router identity, passwords, software upgrades, user management, scheduled tasks, and logging.
 
 ## Quick Start
 
 1. Get a MikroTik hEX S (or any RouterOS v7 device)
 2. Start at Lab 1
 3. Work through the labs in order
-4. Break things, restore from backup (Lab 6), try again
+4. Break things, restore from backup (Lab 3), try again
 
 ## Prerequisites
 
@@ -73,10 +87,34 @@ Enterprise switch integration, dual-WAN, ad blocking, cloud management, and more
 
 ```
 labs/
-├── labs-01-06.md    # Foundation (Initial config through backup)
-├── labs-07-10.md    # VLANs, DHCP, firewall
-├── labs-11-15.md    # RADIUS, WireGuard, User Manager
-└── lab-16.md        # mAP setup and configuration
+├── lab-01.md    # Initial Configuration
+├── lab-02.md    # Packages & Extra Features
+├── lab-03.md    # Backup & Restore
+├── lab-04.md    # USB Storage
+├── lab-05.md    # Containers
+├── lab-06.md    # MAC Access & Discovery
+├── lab-07.md    # Bridges & VLANs
+├── lab-08.md    # DHCP Server
+├── lab-09.md    # DNS
+├── lab-10.md    # Firewall
+├── lab-11.md    # Wireless AP
+├── lab-12.md    # User Manager & RADIUS
+├── lab-13.md    # WireGuard Server
+├── lab-14.md    # WireGuard Clients
+├── lab-15.md    # Cloud & Back to Home
+├── lab-16.md    # Adding Gear (mAP)
+├── lab-17.md    # ICX Switch Integration
+├── lab-18.md    # RUCKUS AP Integration
+├── lab-19.md    # AP Configuration
+├── lab-20.md    # Traffic Analysis
+├── lab-21.md    # Useful Tools
+├── lab-22.md    # Media Center
+├── lab-23.md    # Time & NTP
+├── lab-24.md    # WAN Sources
+├── lab-25.md    # Dual WAN Failover
+├── lab-26.md    # Hotspot & Captive Portal
+├── lab-27.md    # DNS Advanced
+└── lab-28.md    # Administrative Tasks
 ```
 
 ## About
