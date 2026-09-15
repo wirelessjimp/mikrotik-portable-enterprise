@@ -16,10 +16,12 @@ The entire lab runs on two devices:
 
 | Device | Role | Cost |
 |--------|------|------|
-| MikroTik hEX S | Primary router — VLANs, DHCP, firewall, WireGuard, containers | ~$69 |
-| MikroTik mAP | Second device — AP, RADIUS client, remote site | ~$49 |
+| MikroTik L009 | Primary router — VLANs, DHCP, firewall, WireGuard, containers | ~$114 |
+| MikroTik mAP 2nD | Second device — AP, RADIUS client, remote site | ~$49 |
 
-**Total: Under $120.** Add an Ethernet cable and a USB drive and you're still under $200.
+**Total: Under $160.** Add an Ethernet cable and a USB drive and you're still under $200.
+
+To get dual-band Wi-Fi functionality from a Mikrotik device, consider the MikroTik hAP ac2 or hAP ax2. They are larger and cost more than the mAP 2nD, but are dual-band with more horsepower than the mAP 2nd.
 
 RouterOS v7 is identical across every MikroTik platform — hEX S, L009, RB5009, CCR2004. Same CLI, same WinBox, same feature set. Learn on a $69 device, deploy on anything.
 
