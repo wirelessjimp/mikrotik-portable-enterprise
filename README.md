@@ -19,7 +19,7 @@ The entire lab runs on two devices:
 | MikroTik L009 | Primary router — VLANs, DHCP, firewall, WireGuard, containers | ~$114 |
 | MikroTik mAP 2nD | Second device — AP, RADIUS client, remote site | ~$49 |
 
-**Total: Under $160.** Add an Ethernet cable and a USB drive and you're still under $200.
+**Total: Under $170.** Add an Ethernet cable and a USB drive and you're still under $200.
 
 To get dual-band Wi-Fi functionality from a Mikrotik device, consider the MikroTik hAP ac2 or hAP ax2. They are larger and cost more than the mAP 2nD, but are dual-band with more horsepower than the mAP 2nd.
 
