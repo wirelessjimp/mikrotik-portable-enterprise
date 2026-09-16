@@ -85,6 +85,15 @@ Router identity, passwords, software upgrades, user management, scheduled tasks,
 - An Ethernet cable
 - A USB drive (for container storage)
 
+## Security Notice
+
+This guide builds lab networks intended to sit behind an existing firewall — not directly exposed to the internet. If you plan to deploy a MikroTik as your primary edge firewall, additional hardening is required beyond what these labs cover.
+
+In particular: **never expose SSH (port 22) to the public internet.** In September 2026, a critical exploit chain called MikroTrick (CVE-2026-67276 + CVE-2026-86060) was used to hijack MikroTik routers with SSH open to the WAN. Always keep RouterOS updated and use WireGuard for remote management instead of opening management ports directly.
+
+- [MikroTik Security Advisory](https://mikrotik.com/supportsec/september-2026-vulnerability/)
+- [CERT Polska Advisory](https://cert.pl/en/posts/2026/09/vulnerabilities-in-mikrotik-routeros-actively-exploited/)
+
 ## File Organization
 
 ```
@@ -118,6 +127,7 @@ labs/
 ├── lab-27.md    # DNS Advanced
 └── lab-28.md    # Administrative Tasks
 ```
+> **Note:** Any sub-lab numbered X.9 (e.g., Lab 7.9, Lab 10.9) is optional or reference material. These cover advanced topics, alternative approaches, or background information that isn't required to complete the core build.
 
 ## About
 
