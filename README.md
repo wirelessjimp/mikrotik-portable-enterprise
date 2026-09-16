@@ -32,7 +32,7 @@ By the end of this guide, your MikroTik is:
 - A multi-VLAN router with isolated subnets and per-VLAN DHCP
 - A firewall enforcing inter-VLAN isolation with management VLAN access
 - A WireGuard VPN server accepting site-to-site and road warrior connections
-- A RADIUS server (User Manager) for WPA2-Enterprise authentication
+- A RADIUS server (User Manager) for WPA2/WPA3-Enterprise authentication
 - A container host running speed test and network testing tools
 - A DNS server with ad blocking
 - A captive portal for guest access
@@ -72,7 +72,7 @@ Router identity, passwords, software upgrades, user management, scheduled tasks,
 
 ## Quick Start
 
-1. Get a MikroTik hEX S (or any RouterOS v7 device)
+1. Get a MikroTik L009/RB5009/hEX S (or any RouterOS v7 device)
 2. Start at Lab 1
 3. Work through the labs in order
 4. Break things, restore from backup (Lab 3), try again
@@ -125,4 +125,10 @@ Written by Jim Palmer (CWNE #304). Born from three years of building portable en
 
 ## License
 
-This guide is provided as-is for educational purposes. Feel free to use it to learn, build, and break things.
+This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+You are free to share and adapt this material, provided you:
+
+- **Credit** Jim Palmer (CWNE #304) as the original author
+- **Do not** use it for commercial purposes
+- **Share** any derivative work under the same license
