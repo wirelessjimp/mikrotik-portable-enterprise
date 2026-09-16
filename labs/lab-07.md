@@ -120,11 +120,11 @@ We'll remove most ports from the default bridge, keeping only the backdoor port 
 
 > **Why all three on VLAN 40?** At this stage, we're demonstrating that multiple ports can share the same VLAN — the same way a managed switch assigns access ports to a VLAN. VLAN 255 (management) will be configured on the trunk port (ether8) in Lab 7.4. Having three ports on VLAN 40 also gives you room to plug in multiple test devices later without reconfiguring.
 
-    **For 5-port devices (hAP & hEX series):** 
+ **For 5-port devices (hAP & hEX series):** 
     
-    You only have ether2 and ether3 available as access ports. VLAN 40 has no dedicated physical port — it will be accessible via trunk connections configured in Lab 7.4.
+ You only have ether2 and ether3 available as access ports. VLAN 40 has no dedicated physical port — it will be accessible via trunk connections configured in Lab 7.4.
 
-    > **Note:** We still create the vlan40bridge and vlan255bridge interfaces. They're used for trunk ports and internal routing even without dedicated physical access ports.
+ > **Note:** We still create the vlan40bridge and vlan255bridge interfaces. They're used for trunk ports and internal routing even without dedicated physical access ports.
 
 ---
 
