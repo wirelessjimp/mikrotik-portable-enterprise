@@ -146,23 +146,13 @@ IP pools define which addresses DHCP can hand out.
     /ip/dhcp-server/network/add address=10.10.40.0/24 gateway=10.10.40.1 netmask=255.255.255.0 dns-server=10.10.40.1 comment="VLAN 40"
     /ip/dhcp-server/network/add address=10.10.255.0/24 gateway=10.10.255.1 netmask=255.255.255.0 dns-server=10.10.255.1 comment="VLAN 255"
     ```
+> **Optional:** If you installed Pi-hole in Lab 5.9, you can point your DHCP DNS at the Pi-hole container (172.17.0.5) instead of the VLAN gateway for network-wide ad blocking. Only do this if the Pi-hole container is running and healthy — if it stops, DNS resolution stops for that VLAN. You can always change it back to the gateway IP later.
 
 ---
 
-## Lab 8.4 — Verify DHCP on Each VLAN
+### Lab 8 Checkpoint
 
-Confirm that each VLAN bridge is handing out the correct addresses.
-
-1. Plug a laptop into **ether2** (VLAN 20)
-2. Verify your laptop receives an address in the 10.10.20.x range
-3. Move the cable to **ether3** (VLAN 30)
-4. Verify your laptop receives an address in the 10.10.30.x range
-5. Move the cable to **ether4** (VLAN 40)
-6. Verify your laptop receives an address in the 10.10.40.x range
-
-> **Tip:** On macOS, run `ipconfig getifaddr en0` in Terminal. On Windows, run `ipconfig` in Command Prompt. If you don't get an address, check the DHCP server interface matches the correct bridge.
-
-If all three VLANs hand out addresses on the correct subnets, your access ports and DHCP servers are working. You've built the equivalent of a managed switch with per-port VLAN assignment and per-VLAN DHCP — on a $114 router.
+At this point, you have IP addresses, DHCP pools, DHCP servers, and DHCP networks configured for each VLAN. Everything is in place, but we haven't tested it yet — that's Lab 9. If you're eager to verify, plug a laptop into ether2 and see if you get a 10.10.20.x address. If not, don't troubleshoot yet — Lab 9 walks through systematic testing and common issues.
 
 ---
 
