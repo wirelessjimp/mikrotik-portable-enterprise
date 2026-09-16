@@ -59,10 +59,10 @@ While connected to a VLAN port, verify you can reach the containers we built in 
 The containers live on 172.17.0.x (the dockers bridge). Your VLAN device is on 10.10.20.x. Traffic flows because:
 
 1. The MikroTik is the gateway for both networks
-2. The firewall rule allowing traffic to `!10.0.0.0/8` (non-10.x destinations) permits traffic to 172.17.0.x
-3. No additional configuration needed — routing just works
+2. The router knows how to reach both subnets — one is directly connected via the VLAN bridge, the other via the dockers bridge
+3. No additional configuration needed — routing between directly connected networks just works
 
-> **Note:** If you later add more restrictive firewall rules (like a "drop all else" rule), you may need to add explicit accept rules for container access. See Lab 10.9 for details.
+> **Note:** When we add firewall rules in Lab 10, we'll need to make sure container traffic isn't accidentally blocked. See Lab 10.9 for details.
 
 ---
 
