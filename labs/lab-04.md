@@ -19,17 +19,19 @@ This lab enables secure HTTPS and WinBox management from your home network (or a
    - **Dst. Port:** 443,8291
    - **In. Interface List:** WAN
 
-   > **Note:** Replace `YOUR_MANAGEMENT_NETWORK/24` with your actual home network. For example, if your home router assigns addresses like 192.168.1.x, enter `192.168.1.0/24`. Port 443 is for HTTPS web access; port 8291 is for WinBox.
+   > **Note:** Use the WAN IP address you recorded during Lab 1 to determine your management network. If your WAN IP is 192.168.1.50, your management network is `192.168.1.0/24`. If your WAN IP is a public address (not 10.x, 172.16-31.x, or 192.168.x), do not use it here — this rule is only for lab networks behind an existing firewall. Port 443 is for HTTPS web access; port 8291 is for WinBox.
 
-3. Click the **Action** tab and ensure **accept** is selected
+3. Click the **Comment** tab (or scroll to Comment field) and enter: `WAN Access`
 
-4. Click the **Comment** tab (or scroll to Comment field) and enter: `WAN Access`
+4. Click the **Action** tab and ensure **accept** is selected
 
 5. Click **Apply** and **OK**
 
 6. The rule appears at the bottom of the list. Click and drag it up to position **#2** (just after the first default rule).
 
 > **Lab Environment Note:** This rule opens both HTTPS (443) and WinBox (8291) from your home network. This is appropriate for a lab router sitting behind your home firewall. If you're deploying a MikroTik as your primary edge firewall exposed directly to the internet, WinBox access from WAN should be disabled or restricted to VPN-only access — but that's beyond the scope of this guide.
+
+> **Security Alert — MikroTrick (September 2026):** In September 2026, a critical vulnerability chain called MikroTrick (CVE-2026-67276 + CVE-2026-86060) was discovered that allows attackers to bypass SSH authentication and gain full admin access to any MikroTik router with SSH (port 22) exposed to the internet. **Never open SSH to the WAN.** The default RouterOS configuration blocks SSH from the WAN, and this guide does not instruct you to change that. If you need remote management, use WireGuard (Lab 13) and access SSH only through the VPN tunnel. Ensure your RouterOS is updated to at least 7.24.2 (stable), 7.23.4 (long-term), or 6.49.21. For details, see [MikroTik's security advisory](https://mikrotik.com/supportsec/september-2026-vulnerability/).
 
 ---
 
@@ -72,9 +74,9 @@ RouterOS requires a Certificate Authority (CA) before you can sign other certifi
     - **Days Valid:** 730
 
 11. Click the **Key Usage** tab and enable:
-    - tls server
     - digital signature
     - key encipherment
+    - tls server
 
 12. Click **Apply**
 
@@ -83,6 +85,12 @@ RouterOS requires a Certificate Authority (CA) before you can sign other certifi
 14. In the Sign dialog:
     - **CA:** Select `local-ca` from the dropdown
     - Click **Start**
+
+> **Note:** If the Sign dialog shows "Error in Certificate - Selection expected" and won't accept the certificate selection, use the CLI instead:
+> ```
+> /certificate/sign ssl-web-config ca=local-ca
+> ```
+> Wait for `progress: done` before continuing.
 
 15. Wait for status to show "done", then close the Sign dialog.
 
@@ -108,14 +116,20 @@ The HTTPS service should now show as enabled (green) in the services list.
 
 Before disabling HTTP, verify you can reach the router via HTTPS when connected to the backdoor port:
 
-1. Connect your laptop directly to the backdoor port (ether4 on hEX S, ether7 on L009/RB5009)
+1. Connect your laptop directly to the backdoor port, or confirm your laptop is still connected to that port (ether7 on L009/RB5009, ether4 on hEX S)
+       - If you still have a browser tab open to the MikroTik web interface, you can close it now.
+   
+2.  Open a new browser tab
 
-2. Navigate to: `https://192.168.88.1`
+3. Navigate to: `https://192.168.88.1`
 
-3. Accept the certificate warning and log in
+4. Accept the certificate warning and log in
 
 If this works, you're safe to disable HTTP.
 
+> **Expected behavior:** Your browser will show "Not Secure" with a crossed-out https — this is normal. The browser doesn't trust your self-signed certificate. You would need to import your `local-ca` certificate into your laptop's trust store to resolve this, which isn't necessary for a lab.
+
+> **Note:** The first HTTPS connection may take several minutes to load on some browsers. This is related to certificate validation — be patient and don't keep refreshing, as that restarts the process. Subsequent connections will be faster.
 ---
 
 ## Lab 4.5 — Disable HTTP (Cleanup)
@@ -128,7 +142,7 @@ Now that HTTPS is confirmed working via the backdoor:
 
 3. Click **Disable** or toggle it off
 
-4. Click **Apply** and **OK**
+4. Click **Apply** and **OK** (if needed)
 
 > **Note:** With HTTP disabled, all management access uses HTTPS (port 443). The backdoor port still works — you'll just use `https://` instead of `http://`.
 
@@ -152,7 +166,7 @@ To test, you must connect from a network on the WAN side of your router — not 
 
 6. Test WinBox: Open WinBox and enter the WAN IP address directly in the **Connect To** field (WinBox neighbor discovery won't work across the WAN — it's Layer 2 only).
 
-If successful, you can now manage your router from your home network via both HTTPS and WinBox.
+If successful, you can now manage your router from your WAN network via both HTTPS and WinBox.
 
 > **Fallback:** If WAN access fails, connect directly to the backdoor port (second-to-last copper port) for guaranteed access.
 
