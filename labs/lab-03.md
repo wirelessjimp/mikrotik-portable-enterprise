@@ -39,7 +39,7 @@ WinBox is a native application providing the most complete management experience
 
 ### Connect to Your Router
 
-4. In the **Neighbors** tab on the right, your router should appear with its identity.
+4. In the **Neighbors** window on the right, your router should appear with its identity.
 
 5. Click on your router to select it.
 
@@ -149,10 +149,12 @@ This shows all interfaces. Now try:
 ```
 Then press `Tab` — it shows available sub-commands.
 
+Press `Ctrl+C` to clear the current line and return to the prompt. Now  try:
+
 ```
 /ip address print
 ```
-Shows IP addresses. Press `?` at any point to see what's available.
+Shows IP addresses. Press `tab` at any point to see what's available.
 
 ### Safe Mode (Critical for Remote Management)
 
@@ -183,7 +185,7 @@ We configure it now; it becomes useful in Lab 16 when we add the mAP access poin
    - **Enabled:** Checked
    - **Secrets:** Enter a secure password (this will be shared across all your MikroTik devices)
 
-3. Click **Apply**
+3. Click **Apply** 
 
 4. On the right side under **Configuration**, click **Ports**
 
@@ -269,3 +271,5 @@ RoMON processes secrets in order:
 Adding the blank entry temporarily allows mixed authentication, revealing misconfigured secrets.
 
 ---
+
+If you have successfully made it to this point, you can move on to Lab 04.
