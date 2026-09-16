@@ -114,15 +114,18 @@ You'll see the CLI commands that would recreate your current configuration. This
 
 ## Lab 6.4 — When to Use Which
 
+You now have two ways to save your configuration. Here's when to use each:
+
 | Situation | Use |
 |-----------|-----|
 | Quick recovery to known state | Binary backup (Lab 6.1) |
-| Track changes over time | RSC compact export + Git |
+| Track changes over time | RSC compact export — save dated copies |
 | Apply config to new device | RSC export + import on fresh device |
 | Share config with someone else | RSC export (no passwords included) |
 | Complete disaster recovery | Binary backup + See Appendix B |
 
 > **Visual difference:** In the Files window, RSC exports show as type **script** and are typically small (under 10 KiB for a lab config). Binary backups show as type **backup** and are significantly larger because they include all device-specific data. You can see both side by side in your Files list.
+
 > <img width="553" height="421" alt="image" src="https://github.com/user-attachments/assets/6952d7a3-a4c3-4090-9fc7-a6ffb2cbd0bb" />
 
 ---
