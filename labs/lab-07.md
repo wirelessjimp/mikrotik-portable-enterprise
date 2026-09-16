@@ -226,6 +226,7 @@ To make a port act as an access port, we need:
 1. **PVID (Port VLAN ID)** — The VLAN tag assigned to untagged incoming traffic
 2. **Frame Types** — Set to only accept untagged frames
 3. **VLAN Filtering** — Enabled on the bridge to enforce VLAN membership
+4. **Bridge PVID** — Set to match the VLAN so the bridge processes frames correctly
 
 ### Configure an Access Port
 
@@ -241,31 +242,56 @@ We'll configure ether2 as an access port for VLAN 20.
 
 4. Click **Apply** & **OK**
 
-> **Note:** These PVID and Frame Types settings are configured now but only take effect when VLAN filtering is enabled on the bridge, which we'll do in Lab 7.4 when configuring trunk ports. For now, traffic isolation comes from the ports being in separate bridges.
+### Enable VLAN Filtering on the Bridge
+
+5. Navigate to **Bridge** → **Bridge** tab.
+
+6. Double-click on **vlan20bridge** to edit it, then click the **VLAN** tab.
+
+7. Configure:
+   - **VLAN Filtering:** Checked
+   - **PVID:** 20
+
+8. Click **Apply** & **OK**
+
+> **Important:** The bridge PVID must match the VLAN ID. If left at the default of 1, the bridge won't correctly process frames tagged by the port's PVID setting, and DHCP and other services on the VLAN interface won't work.
 
 ### CLI Equivalent
 
 For the remaining access ports, use CLI:
+
 Configure ether3 as access port for VLAN 30
 
 ```
 /interface/bridge/port/set [find interface=ether3] pvid=30 frame-types=admit-only-untagged-and-priority-tagged
+/interface/bridge/set vlan30bridge vlan-filtering=yes pvid=30
 ```
 
-Configure ether4 as access port for VLAN 40
+Configure ether4-6 as access ports for VLAN 40
 
 ```
 /interface/bridge/port/set [find interface=ether4] pvid=40 frame-types=admit-only-untagged-and-priority-tagged
+/interface/bridge/port/set [find interface=ether5] pvid=40 frame-types=admit-only-untagged-and-priority-tagged
+/interface/bridge/port/set [find interface=ether6] pvid=40 frame-types=admit-only-untagged-and-priority-tagged
+/interface/bridge/set vlan40bridge vlan-filtering=yes pvid=40
+```
+
+Enable VLAN filtering on vlan255bridge for trunk use in Lab 7.4
+
+```
+/interface/bridge/set vlan255bridge vlan-filtering=yes pvid=255
 ```
 
 ### What This Accomplishes
 
 Any device plugged into ether2 will:
-- Be isolated to VLAN 20's bridge
-- Only communicate with other devices on the same bridge
+- Have its traffic tagged with VLAN 20 on ingress
+- Receive untagged traffic destined for VLAN 20 on egress
 - Work without any VLAN configuration on the device itself
 
-This is similar to how you'd configure an access port on a Cisco, Juniper, or RUCKUS ICX switch — the difference is that we're using separate bridges per VLAN instead of a single bridge with VLAN filtering. We'll transition to the single-bridge approach later.
+This is identical to how you'd configure an access port on a Cisco, Juniper, or RUCKUS ICX switch.
+
+---
 
 ## Lab 7.4 — Configuring Trunk Ports
 
