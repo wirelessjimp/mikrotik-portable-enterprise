@@ -6,7 +6,7 @@ User Manager turns your MikroTik into a RADIUS authentication server. For Wi-Fi 
 
 This lab configures User Manager to authenticate wireless clients connecting to an external enterprise AP. The AP sends authentication requests to the MikroTik, which validates credentials and returns accept/reject. This is the same workflow used in production enterprise networks — just with a fraction of the cost and complexity.
 
-> **Tested Configuration:** This lab was developed and tested using a RUCKUS AP running Unleashed firmware. The RADIUS configuration will work with any enterprise AP that supports WPA2/WPA3-Enterprise with external RADIUS.
+> **Tested Configuration:** This lab was developed and tested using an Enterprise AP under multiple scenarios. The RADIUS configuration will work with any enterprise AP that supports WPA2/WPA3-Enterprise with external RADIUS.
 
 ---
 
@@ -74,11 +74,11 @@ You could use `@mylab`, `@home.local`, or `@anything.whatever` — what matters 
    - **Use CRL:** Checked
    - **CRL Store:** ram
 
-4. Click **Apply** and **OK**
+4. Click **Apply** & **OK**
 
 ### Create the Certificate Authority
 
-5. Click **Add New** and configure on the **General** tab:
+5. Click **New** and configure on the **General** tab:
    - **Name:** radius-ca
    - **Common Name:** RADIUS-CA
    - **Digest Algorithm:** sha384
@@ -96,16 +96,19 @@ You could use `@mylab`, `@home.local`, or `@anything.whatever` — what matters 
 9. Verify **Certificate** is set to **radius-ca**
 
 10. Click **Start**
+    > **UI Bug:** If the Sign dialog shows "Error in Certificate - Selection expected," use the CLI instead:
+    > ```
+    > /certificate/sign radius-ca
+    > ```
+    > Wait for `progress: done`.
 
 11. Wait for progress to show "done", then click **Cancel** to close the signing window.
 
-12. Click the **General** tab to return to the main certificate settings.
-
-13. Click **OK** to return to the certificate list
+12. Click **OK** to return to the certificate list
 
 ### Create the Server Certificate
 
-14. Click **Add New** and configure on the **General** tab:
+13. Click **New** and configure on the **General** tab:
    - **Name:** radius-server
    - **Common Name:** radius.mikrotik.test
    - **Subject Alt. Name:** DNS:radius.mikrotik.test
@@ -113,42 +116,50 @@ You could use `@mylab`, `@home.local`, or `@anything.whatever` — what matters 
    - **Key Size:** secp384r1
    - **Days Valid:** 825 (just over 2 years — under Apple's certificate limit)
 
-15. Click the **Key Usage** tab and check:
+14. Click the **Key Usage** tab and check:
    - **tls server**
 
-16. Click **Apply**
+15. Click **Apply**
 
-17. Click **Sign**
+16. Click **Sign**
 
-18. Set **CA** to **radius-ca**
+17. Set **CA** to **radius-ca**
 
-19. Click **Start**
+18. Click **Start**
+    > **UI Bug:** If the Sign dialog won't accept the selection, use the CLI:
+    > ```
+    > /certificate/sign radius-server ca=radius-ca
+    > ```
+    > Wait for `progress: done`.
 
-20. Wait for "done", then click **Cancel** to close the signing window.
+19. Wait for "done", then click **Cancel** to close the signing window.
 
-21. Click the **General** tab to return to the main certificate settings.
-
-22. Click **OK**
+20. Click **OK**
 
 ### Create a Client Certificate (for EAP-TLS)
 
-23. Click **Add New** and configure on the **General** tab:
+21. Click **New** and configure on the **General** tab:
    - **Name:** user1-client
    - **Common Name:** user1@mikrotik.test
    - **Digest Algorithm:** sha384
    - **Key Size:** secp384r1
    - **Days Valid:** 825
 
-24. Click the **Key Usage** tab and check:
+22. Click the **Key Usage** tab and check:
    - **tls client**
 
-25. Click **Apply**
+23. Click **Apply**
 
-26. Click **Sign**
+24. Click **Sign**
 
-27. Set **CA** to **radius-ca**
+25. Set **CA** to **radius-ca**
 
-28. Click **Start**
+26. Click **Start**
+    > **UI Bug:** If the Sign dialog won't accept the selection, use the CLI:
+    > ```
+    > /certificate/sign user1-client ca=radius-ca
+    > ```
+    > Wait for `progress: done`.
 
 29. Wait for "done", then click **Cancel** to close the signing window.
 
@@ -156,7 +167,7 @@ You could use `@mylab`, `@home.local`, or `@anything.whatever` — what matters 
 
 31. **Important:** Check the **Trusted** checkbox. This marks the certificate as trusted for client authentication.
 
-32. Click **Apply** and **OK**
+32. Click **Apply** & **OK**
 
 ### Verify Certificates
 
@@ -190,22 +201,24 @@ You should now have three new RADIUS certificates (in addition to any pre-existi
    - **Enabled:** Checked
    - **Certificate:** radius-server
 
-4. Click **Apply** and **OK**
+4. Click **Apply** & **OK**
 
 ### Add RADIUS Client (Your Enterprise AP)
 
 User Manager needs to know which devices are allowed to send RADIUS requests. Each AP (or WLC) that will authenticate against User Manager needs an entry.
 
-5. In the **Routers** tab, click **Add New**
+**For WLPC classes, use the values in the brackets below.**
+
+5. In the **Routers** tab, click **New**
 
 6. Configure:
-   - **Name:** *make-model* (use a descriptive name like "ruckus-r770" or "aruba-ap22")
-   - **Address:** [IP address of your AP on the management VLAN]
+   - **Name:** *make-model* (use a descriptive name like "ruckus-r770" or "aruba-ap22") [mikrotik-ap]
+   - **Address:** (IP address of your AP on the management VLAN) [10.22.255.0/24]
    - **Shared Secret:** [create a strong shared secret — you'll need this when configuring the AP]
 
    > **Example:** If your AP will get 10.10.255.x from DHCP, use that address. For testing, you can use 10.10.255.0/24 to allow any device on that subnet, but specific IPs are more secure.
 
-7. Click **Apply** and **OK**
+7. Click **Apply** & **OK**
 
 ### Configure Authentication Methods
 
@@ -215,29 +228,31 @@ User Manager needs to know which devices are allowed to send RADIUS requests. Ea
 
 10. In the **Outer Auths** section:
     - **Uncheck** everything except:
-      - **EAP-TLS** (certificate-based)
       - **EAP-PEAP** (username/password)
 
     > **Note:** Leave the **Inner Auths** checkboxes as they are. For EAP-PEAP, MSCHAPv2 needs to remain checked as the inner authentication method. For EAP-TLS, inner auths are not used since the certificate handles authentication directly.
 
-11. Click **Apply** and **OK**
+    > > **Note:** EAP-TLS is handled by the dedicated `cert-auth` group we'll create next. Keeping auth methods separated by group gives you cleaner control over who authenticates how.
 
-12. Click **Add New** to create a certificate-only group:
+11. Click **Apply** & **OK**
+
+12. Click **New** to create a certificate-only group:
     - **Name:** cert-auth
     - **Outer Auths:** Check only **EAP-TLS**
+    - **Inner Auths:** Uncheck everything
 
-13. Click **Apply** and **OK**
+13. Click **Apply** & **OK**
 
 ### Add Test Users
 
 14. Click the **Users** tab.
 
-15. Click **Add New** to create an EAP-TLS user:
+15. Click **New** to create an EAP-TLS user:
     - **Name:** user1@mikrotik.test (must match the client certificate CN)
     - **Group:** cert-auth
     - **Comment:** EAP-TLS test user
 
-16. Click **Apply** and **OK**
+16. Click **Apply** & **OK**
 
 17. Click **Add New** to create an EAP-PEAP user:
     - **Name:** user2@mikrotik.test
@@ -246,7 +261,7 @@ User Manager needs to know which devices are allowed to send RADIUS requests. Ea
     - **Shared Users:** 3 (allows 3 simultaneous connections)
     - **Comment:** EAP-PEAP test user
 
-18. Click **Apply** and **OK**
+18. Click **Apply** & **OK**
 
 ---
 
@@ -256,7 +271,8 @@ The AP needs to reach User Manager on UDP ports 1812 (authentication) and 1813 (
 
 1. Navigate to **IP** → **Firewall**
 
-2. Click **Add New** and configure on the **General** tab:
+2. Click **New** and configure on the **General** tab:
+   - **Comment:** `RADIUS from AP`
    - **Chain:** input
    - **Protocol:** udp
    - **Dst. Port:** 1812,1813
@@ -265,12 +281,12 @@ The AP needs to reach User Manager on UDP ports 1812 (authentication) and 1813 (
 3. Click the **Action** tab:
    - **Action:** accept
 
-4. Add a comment: `RADIUS from AP`
+4. Click **Apply** & **OK**
 
-5. Click **Apply** and **OK**
+5. Drag the rule up so it's processed before any drop rules.
 
-6. Drag the rule up so it's processed before any drop rules.
-
+---
+> **Class note:** Labs 11.5 and 11.6 require a configured AP, which we haven't built yet. Stop here — User Manager is configured and ready. We'll come back to test RADIUS authentication after Lab 16 when your mAP is set up as an AP.
 ---
 
 ## Lab 11.5 — Configure Your Enterprise AP
