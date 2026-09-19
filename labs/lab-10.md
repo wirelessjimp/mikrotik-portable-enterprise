@@ -70,7 +70,8 @@ VLAN 255 (management) gets a different rule 4: **accept** instead of **drop**, a
 
 1. Navigate to **IP** → **Firewall**
 
-2. Click **Add New** and configure on the **General** tab:
+2. Click **New** and configure on the **General** tab:
+   - **Comment** field: `VLAN 20 gateway access`
    - **Chain:** input
    - **Src. Address:** 10.10.20.0/24
    - **Dst. Address:** 10.10.20.1
@@ -79,58 +80,55 @@ VLAN 255 (management) gets a different rule 4: **accept** instead of **drop**, a
 3. Click the **Action** tab:
    - **Action:** accept
 
-4. Add a comment in the **Comment** field: `VLAN 20 gateway access`
-
-5. Click **Apply** and **OK**
+4. Click **Apply** & **OK**
 
 ### Rule 2: Allow Access to Upstream Router
 
-6. Click **Add New** and configure on the **General** tab:
+5. Click **Add New** and configure on the **General** tab:
+   - **comment:** `VLAN 20 upstream access`
    - **Chain:** forward
    - **Src. Address:** 10.10.20.0/24
    - **Dst. Address:** [YOUR WAN GATEWAY from Lab 10.1]
    - **In. Interface:** vlan20
 
-7. Click the **Action** tab:
+6. Click the **Action** tab:
    - **Action:** accept
 
-8. Add a comment: `VLAN 20 upstream access`
-
-9. Click **Apply** and **OK**
+7. Click **Apply** & **OK**
 
 ### Rule 3: Allow All Non-10.x Destinations
 
-10. Click **Add New** and configure on the **General** tab:
+8. Click **New** and configure on the **General** tab:
+    - **Comment:** `VLAN 20 allow all non-10.x destinations`
     - **Chain:** forward
     - **Src. Address:** 10.10.20.0/24
     - **Dst. Address:** 10.0.0.0/8
     - **Dst. Address Negation:** ✓ Click the checkbox to add `!`
     - **In. Interface:** vlan20
 
-11. Click the **Action** tab:
+9. Click the **Action** tab:
     - **Action:** accept
 
-12. Add a comment: `VLAN 20 allow all non-10.x destinations`
-
-13. Click **Apply** and **OK**
+10. Click **Apply** & **OK**
 
 ### Rule 4: Block Other Lab Networks
 
-14. Click **Add New** and configure on the **General** tab:
+11. Click **New** and configure on the **General** tab:
+    - **Comment:** `VLAN 20 isolate`
     - **Chain:** forward
     - **Src. Address:** 10.10.20.0/24
     - **Dst. Address:** 10.0.0.0/8
     - **Dst. Address Negation:** Leave unchecked (no `!`)
     - **In. Interface:** vlan20
 
-15. Click the **Action** tab:
+12. Click the **Action** tab:
     - **Action:** drop
 
-16. Add a comment: `VLAN 20 isolate`
+13. Click **Apply** & **OK**
 
-17. Click **Apply** and **OK**
+The firewall operates on the principle of "First in, First out", or FIFO, so to make sure these rules are applied in the correct order, we need to move them from the bottom of the list up to where they will be effective.
 
-18. Select all four VLAN 20 rules using the checkboxes, then drag them as a group so they're positioned after the default rules and the WAN Access rule from Lab 4.
+14. Select all four VLAN 20 rules by clicking on the first one, holding the *shift* key, then drag them as a group so they're positioned after the default rules and the WAN Access rule from Lab 4.
 
 ---
 
@@ -175,6 +173,10 @@ Note the last rule: **accept** to 10.0.0.0/8 instead of **drop**. This allows VL
 
 After creating all rules, verify they're in the correct order. Navigate to **IP** → **Firewall** and review.
 
+### Reorder the new CLI rules
+
+The rules that you created via CLI will be down at the bottom, so using the same method as before (Click + shift) select all the VLAN rules and move them up to be below the **VLAN 20** rules.
+
 The order should flow like this:
 
 1. Default rules (accept established, drop invalid)
@@ -204,104 +206,7 @@ For VLAN 255 (management):
 
 ---
 
-## Lab 10.8 — Interface Lists vs Individual Interfaces (Reference)
-
-*Reference: Understanding when to use interface lists in firewall rules.*
-
-Throughout this guide, firewall rules reference individual VLAN interfaces (vlan20, vlan30, etc.) rather than interface lists. This is intentional for learning purposes, but you should understand the tradeoff.
-
-### Individual Interfaces
-
-```
-/ip/firewall/filter/add chain=forward src-address=10.10.20.0/24 in-interface=vlan20 action=accept
-/ip/firewall/filter/add chain=forward src-address=10.10.30.0/24 in-interface=vlan30 action=accept
-```
-
-**Pros:**
-- Explicit — you know exactly what each rule affects
-- Easier to troubleshoot — "VLAN 30 isn't working" → check vlan30 rules
-- Different behavior per VLAN is straightforward
-
-**Cons:**
-- More rules as you add VLANs
-- Repetitive when all VLANs need the same treatment
-
-### Interface Lists
-
-```
-/interface/list/add name=LAB-VLANS
-/interface/list/member/add list=LAB-VLANS interface=vlan20
-/interface/list/member/add list=LAB-VLANS interface=vlan30
-/interface/list/member/add list=LAB-VLANS interface=vlan40
-
-/ip/firewall/filter/add chain=forward in-interface-list=LAB-VLANS action=accept
-```
-
-**Pros:**
-- Fewer rules — one rule covers all members
-- Adding a new VLAN means adding it to the list, not creating new rules
-- Scales better for large deployments
-
-**Cons:**
-- Less granular — all list members get the same treatment
-- Harder to troubleshoot — "which interfaces are in LAB-VLANS again?"
-- Exceptions require additional rules
-
-### When to Use Each
-
-| Scenario | Recommendation |
-|----------|----------------|
-| Learning/lab environment | Individual interfaces |
-| Small deployment (<10 VLANs) | Individual interfaces |
-| Large deployment (10+ VLANs) | Interface lists |
-| All VLANs need identical rules | Interface lists |
-| VLANs need different treatment | Individual interfaces |
-
-### Converting Later
-
-If you build with individual interfaces and later want to convert to lists:
-
-1. Create an interface list
-2. Add all relevant interfaces to the list
-3. Create new rules using the list
-4. Test thoroughly
-5. Remove the old individual rules
-
-The logic is the same — only the targeting changes.
-
----
-
-## Lab 10.9 — Firewall Adjustments (Future Reference)
-
-*Reference: Use when deploying to a different network or adding restrictions.*
-
-### If Container Access Stops Working
-
-If you add a more restrictive "drop all else" rule later, you may block container access. Add explicit accept rules before the drop:
-
-```
-/ip/firewall/filter/add chain=forward src-address=10.10.20.0/24 dst-address=172.17.0.0/24 action=accept comment="VLAN 20 to containers" place-before=[find comment="VLAN 20 isolate"]
-```
-
-The `place-before` parameter ensures the accept rule comes before the drop rule.
-
-### If Your Home Network Uses 10.x Addressing
-
-The "block 10.x" logic assumes your home network doesn't use 10.x addresses. If your home network is 10.0.0.0/8, you'll need to adjust:
-
-1. Change the drop rule to specifically block only your lab subnets
-2. Or change your lab addressing to use a different range (172.16.x.x, 192.168.x.x)
-
-### Editing Existing Rules
-
-1. Click on the rule to edit
-2. Modify the relevant fields
-3. Click **Apply** and **OK**
-4. Verify rule order hasn't changed
-
----
-
-## Lab 10.10 — Port Forwarding (dst-nat)
+## Lab 10.8 — Port Forwarding (dst-nat)
 
 Port forwarding allows external traffic to reach internal services. This is essential when running your MikroTik as your main router and you need to expose services like game servers, web servers, or remote access.
 
@@ -409,6 +314,103 @@ Port forwarding (NAT) redirects traffic, but your firewall filter rules must als
 
 ---
 
+## Lab 10.9 — Interface Lists vs Individual Interfaces (Reference)
+
+*Reference: Understanding when to use interface lists in firewall rules.*
+
+Throughout this guide, firewall rules reference individual VLAN interfaces (vlan20, vlan30, etc.) rather than interface lists. This is intentional for learning purposes, but you should understand the tradeoff.
+
+### Individual Interfaces
+
+```
+/ip/firewall/filter/add chain=forward src-address=10.10.20.0/24 in-interface=vlan20 action=accept
+/ip/firewall/filter/add chain=forward src-address=10.10.30.0/24 in-interface=vlan30 action=accept
+```
+
+**Pros:**
+- Explicit — you know exactly what each rule affects
+- Easier to troubleshoot — "VLAN 30 isn't working" → check vlan30 rules
+- Different behavior per VLAN is straightforward
+
+**Cons:**
+- More rules as you add VLANs
+- Repetitive when all VLANs need the same treatment
+
+### Interface Lists
+
+```
+/interface/list/add name=LAB-VLANS
+/interface/list/member/add list=LAB-VLANS interface=vlan20
+/interface/list/member/add list=LAB-VLANS interface=vlan30
+/interface/list/member/add list=LAB-VLANS interface=vlan40
+
+/ip/firewall/filter/add chain=forward in-interface-list=LAB-VLANS action=accept
+```
+
+**Pros:**
+- Fewer rules — one rule covers all members
+- Adding a new VLAN means adding it to the list, not creating new rules
+- Scales better for large deployments
+
+**Cons:**
+- Less granular — all list members get the same treatment
+- Harder to troubleshoot — "which interfaces are in LAB-VLANS again?"
+- Exceptions require additional rules
+
+### When to Use Each
+
+| Scenario | Recommendation |
+|----------|----------------|
+| Learning/lab environment | Individual interfaces |
+| Small deployment (<10 VLANs) | Individual interfaces |
+| Large deployment (10+ VLANs) | Interface lists |
+| All VLANs need identical rules | Interface lists |
+| VLANs need different treatment | Individual interfaces |
+
+### Converting Later
+
+If you build with individual interfaces and later want to convert to lists:
+
+1. Create an interface list
+2. Add all relevant interfaces to the list
+3. Create new rules using the list
+4. Test thoroughly
+5. Remove the old individual rules
+
+The logic is the same — only the targeting changes.
+
+---
+
+## Lab 10.10 — Firewall Adjustments (Future Reference)
+
+*Reference: Use when deploying to a different network or adding restrictions.*
+
+### If Container Access Stops Working
+
+If you add a more restrictive "drop all else" rule later, you may block container access. Add explicit accept rules before the drop:
+
+```
+/ip/firewall/filter/add chain=forward src-address=10.10.20.0/24 dst-address=172.17.0.0/24 action=accept comment="VLAN 20 to containers" place-before=[find comment="VLAN 20 isolate"]
+```
+
+The `place-before` parameter ensures the accept rule comes before the drop rule.
+
+### If Your Home Network Uses 10.x Addressing
+
+The "block 10.x" logic assumes your home network doesn't use 10.x addresses. If your home network is 10.0.0.0/8, you'll need to adjust:
+
+1. Change the drop rule to specifically block only your lab subnets
+2. Or change your lab addressing to use a different range (172.16.x.x, 192.168.x.x)
+
+### Editing Existing Rules
+
+1. Click on the rule to edit
+2. Modify the relevant fields
+3. Click **Apply** and **OK**
+4. Verify rule order hasn't changed
+
+---
+
 ## Lab 10 Summary
 
 At the end of Lab 10, you have:
@@ -426,52 +428,6 @@ Your MikroTik is now a fully functional multi-VLAN lab router. Each port provide
 
 ---
 
-# Lab Notes — Labs 7-10
-
-Print this page or copy to a document for recording important values.
-
----
-
-**Lab 7 — Interfaces**
-
-| Item | Value |
-|------|-------|
-| Device Type | ☐ 5-port ☐ 8-port |
-| Backdoor Port | |
-| Expansion Port | |
-| Access Ports Available | |
-
----
-
-**Lab 8 — DHCP**
-
-| VLAN | Interface | IP Address | Pool Range |
-|------|-----------|------------|------------|
-| 20 | vlan20 | 10.10.20.1/24 | .10-.250 |
-| 30 | vlan30 | 10.10.30.1/24 | .10-.250 |
-| 40 | vlan40 | 10.10.40.1/24 | .10-.250 |
-| 255 | vlan255 | 10.10.255.1/24 | .10-.250 |
-
----
-
-**Lab 10 — Firewall**
-
-| Item | Value |
-|------|-------|
-| Upstream Gateway (quad-zero route) | |
-| Management Network (from Lab 4) | |
-
----
-
-**Testing Results**
-
-| Port | Expected VLAN | IP Received | Container Access |
-|------|---------------|-------------|------------------|
-| ether2 | 20 | | ☐ Pass ☐ Fail |
-| ether3 | 30 | | ☐ Pass ☐ Fail |
-| ether4 | 40 (8-port only) | | ☐ Pass ☐ Fail |
-
----
-
+When you have reached this point, you can continue onto Lab 11.
 *Document Version: Draft 3.0*
 *Last Updated: May 2026*
