@@ -45,12 +45,8 @@ The simplest way to connect a mobile device is via QR code using the MikroTik ap
 2. The **VPN WireGuard Client Config** field shows a complete WireGuard configuration, and the **VPN WireGuard Client Config QRCode** is displayed below it.
 
 3. Install the **MikroTik Back To Home** app on your phone or tablet (iOS App Store or Google Play).
-   <img width="204" height="192" alt="image" src="https://github.com/user-attachments/assets/a98b63d0-ffef-472e-93a1-a1ce6c5b5112" />
-
-   <img width="4491" height="1552" alt="image" src="https://github.com/user-attachments/assets/0c794dea-9b7e-484b-858d-705c43015aff" />
-   <img width="4491" height="1552" alt="image" src="https://github.com/user-attachments/assets/47b5979d-c859-4203-b214-a525a0415182" />
-
-
+   
+   <img width="102" height="96" alt="image" src="https://github.com/user-attachments/assets/a98b63d0-ffef-472e-93a1-a1ce6c5b5112" />
 
 5. Open the app and tap **Join shared**.
 
