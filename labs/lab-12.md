@@ -16,18 +16,18 @@ WireGuard is a modern VPN protocol built into RouterOS v7. It's faster and simpl
 
 1. Navigate to **WireGuard** in the left menu.
 
-2. Click **Add New** and configure:
+2. Click **New** and configure:
    - **Name:** wg-server (the default name is "wg1" — rename it for clarity)
    - **MTU:** 1420 (default, accounts for WireGuard overhead)
    - **Listen Port:** 51820 (standard WireGuard port; default 13231 also works)
 
-3. Click **Apply** and **OK**
+3. Click **Apply** & **OK**
 
 4. **Important:** After creation, the interface displays **Public Key** and **Private Key**. 
    
    Copy the **Public Key** and save it somewhere — remote peers need this to connect.
 
-   > **Server Public Key:** ________________________________
+   > **Note:** Create a new text note on your computer and save the **Public Key** on that note. Make sure you label the note as your WireGuard Public Key (WG_Pub_Key).
 
 ---
 
@@ -37,13 +37,13 @@ The WireGuard interface needs an IP address. We'll use a dedicated subnet for VP
 
 1. Navigate to **IP** → **Addresses**
 
-2. Click **Add New** and configure:
+2. Click **New** and configure:
+   - **Comment:** WireGuard VPN
    - **Address:** 10.255.255.1/24
    - **Network:** 10.255.255.0
    - **Interface:** wg-server
-   - **Comment:** WireGuard VPN
 
-3. Click **Apply** and **OK**
+3. Click **Apply** & **OK**
 
 > **IP Scheme:** The server is 10.255.255.1. Peers will be assigned addresses like 10.255.255.2, 10.255.255.3, etc.
 
@@ -57,7 +57,8 @@ Allow WireGuard traffic from the internet and permit VPN clients to access inter
 
 1. Navigate to **IP** → **Firewall**
 
-2. Click **Add New** and configure on the **General** tab:
+2. Click **New** and configure on the **General** tab:
+   - **Comment:** `WireGuard from internet`
    - **Chain:** input
    - **Protocol:** udp
    - **Dst. Port:** 51820
@@ -66,22 +67,20 @@ Allow WireGuard traffic from the internet and permit VPN clients to access inter
 3. Click the **Action** tab:
    - **Action:** accept
 
-4. Add a comment: `WireGuard from internet`
-
-5. Click **Apply** and **OK**
+4. Click **Apply** & **OK**
 
 ### Allow VPN Client Traffic
 
-6. Click **Add New** to create a new firewall rule. Configure on the **General** tab:
+6. Click **New** to create a new firewall rule. Configure on the **General** tab:
+   - **Enabled:** ✅ Checked
+   - **Comment:** `WireGuard clients forward`
    - **Chain:** forward
    - **Src. Address:** 10.255.255.0/24
 
 7. Click the **Action** tab:
    - **Action:** accept
 
-8. Add a comment: `WireGuard clients forward`
-
-9. Click **Apply** and **OK**
+9. Click **Apply** & **OK**
 
 10. Move both rules up so they are positioned after the VLAN 255 rules and before any default drop rules.
 
@@ -89,12 +88,12 @@ Allow WireGuard traffic from the internet and permit VPN clients to access inter
 
 11. Navigate to **Interfaces** → **Interface List**
 
-12. Click **Add New**:
+12. Click **New**:
    - **List:** LAN
    - **Interface:** wg-server
    - **Comment:** WireGuard VPN
 
-13. Click **Apply** and **OK**
+13. Click **Apply** & **OK**
 
 ---
 
@@ -120,6 +119,10 @@ If your internet connection has a dynamic IP address (most do), you need a way f
 Remote peers will connect to this address instead of your IP.
 
 > **Note:** If your router is behind another router or NAT device, you'll see a warning: "Router is behind a NAT. Remote connection might not work." WireGuard still works, but you may need to forward the WireGuard listen port (51820) on the upstream device. Lab 14 (Back to Home) avoids this requirement by using MikroTik's cloud relay.
+>
+> Also, if your router is behind too many NAT connections, it might not be able to update the DNS Name.
+
+6. Click **OK** to close the Cloud window.
 
 ---
 
