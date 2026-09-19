@@ -19,24 +19,24 @@ This scenario connects a second MikroTik (like a mAP) back to your main router. 
 
 ### On the Remote MikroTik (Client Side)
 
-1. Navigate to **WireGuard** and click **Add New**:
+1. Navigate to **WireGuard** and click **New**:
    - **Name:** wg-home
    - **MTU:** 1420
    - **Listen Port:** 51820
 
-2. Click **Apply** and **OK**
+2. Click **Apply** & **OK**
 
 3. Copy the **Public Key** from this interface:
 
    > **Remote Site Public Key:** ________________________________
 
-4. Navigate to **IP** → **Addresses** and click **Add New**:
+4. Navigate to **IP** → **Addresses** and click **New**:
    - **Address:** 10.255.255.2/24
    - **Network:** 10.255.255.0
    - **Interface:** wg-home
    - **Comment:** WireGuard to home
 
-5. Click **Apply** and **OK**
+5. Click **Apply** & **OK**
 
 ### Add Peer on Remote MikroTik
 
@@ -48,6 +48,7 @@ This scenario connects a second MikroTik (like a mAP) back to your main router. 
    - **Endpoint:** [your DDNS address from Lab 12.4]
    - **Endpoint Port:** 51820
    - **Allowed Address:** 10.255.255.0/24, 10.10.0.0/16
+   > Click the **+** button to the right of the first field to add a second field for the second IP range.
    - **Persistent Keepalive:** 00:00:25 (25 seconds)
 
    > **Note:** Allowed Address defines what traffic goes through the tunnel. Include the VPN subnet (10.255.255.0/24) and your lab networks (10.10.0.0/16).
@@ -124,6 +125,7 @@ Before configuring the MikroTik, install the WireGuard client on your laptop:
     - **Client Endpoint:** [your DDNS address from Lab 12.4]
     - **Client Keepalive:** 00:00:25
     - **Client Allowed Address:** Remove `::/0` and add `10.10.0.0/16` and `10.255.255.0/24`
+    > Click the **+** button to the right of the first field to add a second field for the second IP range.
 
 4. Click **Apply**
 
@@ -147,7 +149,11 @@ Before configuring the MikroTik, install the WireGuard client on your laptop:
 
 11. Name the tunnel (e.g., "Lab Router")
 
-12. Save and activate the tunnel.
+12. Save the new tunnel.
+
+13. If you are connected to your router through the backdoor port, switch to a connection that will put you on the WAN side of the router (an existing Wi-Fi connection).
+
+14. In the new tunnel, click on **Activate**.
 
 > **Behind NAT?** If your MikroTik is behind another router (e.g., a lab or office setup), the DDNS endpoint won't work because the WireGuard port isn't forwarded. For local testing, edit the tunnel configuration and change the Endpoint to your MikroTik's local IP address (e.g., `10.22.251.56:51820`). For remote access behind NAT, see Lab 14 (Back to Home) which uses MikroTik's cloud relay to avoid port forwarding.
 
@@ -159,31 +165,7 @@ Before configuring the MikroTik, install the WireGuard client on your laptop:
 
 14. On your MikroTik, check **WireGuard** → **Peers** — you should see a recent handshake and traffic counters for the Laptop Client peer.
 
-> **Note:** The QR code generated in step 5 can also be used with the WireGuard mobile app. Open the app, tap **+** → **Scan from QR code**, and point the camera at the QR code displayed on the MikroTik screen. This is the fastest way to set up a phone connection.
-
----
-
-## Lab 13.3 — WireGuard Notes Page
-
-Record your WireGuard configuration for reference:
-
-**Server (Main Router)**
-
-| Item | Value |
-|------|-------|
-| Interface Name | |
-| Listen Port | |
-| Server Public Key | |
-| VPN Subnet | 10.255.255.0/24 |
-| DDNS Address | |
-
-**Peers**
-
-| Peer Name | Public Key | Allowed Address |
-|-----------|------------|-----------------|
-| | | |
-| | | |
-| | | |
+> **Note:** The QR code generated in step 5 can also be used with the WireGuard mobile app. Open the app, tap **+** → **Scan from QR code**, and point the camera at the QR code displayed on the MikroTik screen. This is the fastest way to set up a phone connection. We'll complete the full setup in Lab 14 next.
 
 ---
 
