@@ -44,15 +44,21 @@ The simplest way to connect a mobile device is via QR code using the MikroTik ap
 
 2. The **VPN WireGuard Client Config** field shows a complete WireGuard configuration, and the **VPN WireGuard Client Config QRCode** is displayed below it.
 
-3. Install the **MikroTik** app on your phone or tablet (iOS App Store or Google Play).
+3. Install the **MikroTik Back To Home** app on your phone or tablet (iOS App Store or Google Play).
+   <img width="204" height="192" alt="image" src="https://github.com/user-attachments/assets/a98b63d0-ffef-472e-93a1-a1ce6c5b5112" />
 
-4. Open the app and tap **Join shared**.
+   <img width="4491" height="1552" alt="image" src="https://github.com/user-attachments/assets/0c794dea-9b7e-484b-858d-705c43015aff" />
+   <img width="4491" height="1552" alt="image" src="https://github.com/user-attachments/assets/47b5979d-c859-4203-b214-a525a0415182" />
 
-5. Tap **Scan QR code** and allow the app to access your camera.
 
-6. Point your camera at the QR code displayed on your router screen.
 
-7. The tunnel configures automatically. Your phone is now connected to your network via BTH VPN.
+5. Open the app and tap **Join shared**.
+
+6. Tap **Scan QR code** and allow the app to access your camera.
+
+7. Point your camera at the QR code displayed on your router screen.
+
+8. The tunnel configures automatically. Your phone is now connected to your network via BTH VPN.
 
    > **Note:** The BTH client configuration includes two peers — one relay peer and one server peer — and routes all traffic through the VPN (full tunnel). This is different from the manual WireGuard setup in Lab 13, which uses a split tunnel that only routes lab network traffic.
 
