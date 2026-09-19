@@ -4,7 +4,7 @@
 
 This lab builds out a second MikroTik device as a portable, fully-featured extension of your network. When complete, you'll have a device you can take anywhere — plug it into any network with internet access and it tunnels home, giving you secure access to your lab.
 
-We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and has Wi-Fi built in. The same process works for any RouterOS device — if you want more power, the hAP ax² or hAP ax³ are solid upgrades with better Wi-Fi and more RAM.
+We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and has Wi-Fi built in. The same process works for any RouterOS device — if you want more power, the hAP ac² hAP ax² are solid upgrades with better Wi-Fi and more RAM, but a little larger.
 
 ### What We're Building
 
@@ -24,13 +24,13 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 
 1. Connect the mAP's ETH1 port to your main router's expansion port (ether5 on 5-port devices, ether8 on 8-port devices).
 
-   > **Power:** The mAP can be powered via PoE from the router (if your router supports PoE-out), USB, or the included adapter. For this lab, any power source works.
+   > **Power:** The mAP can be powered via PoE from the router (if your router supports PoE-out - both the L009, hEX S, and RB5009 do), USB, or the included adapter. For this lab, any power source works.
 
 2. Wait for the mAP to boot — the PWR light will go solid green.
 
 ### Connect via WinBox
 
-3. Move your laptop's ethernet cable from the hEX S to **ether2** on the mAP. This gives you direct Layer 2 access to the mAP so WinBox can discover it by MAC address.
+3. Move your laptop's ethernet cable from the main router to **ether2** on the mAP. This gives you direct Layer 2 access to the mAP so WinBox can discover it.
 
 4. Open WinBox on your computer.
 
@@ -54,7 +54,7 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 
 11. RouterOS will prompt you to change the default password. Set a new password.
 
-    > **Tip:** Use the same password as your hEX S so you're not juggling multiple credentials during the lab.
+    > **Tip:** Use the same password as your main router so you're not juggling multiple credentials during the lab.
 
 12. Navigate to **System** → **Identity**
 
@@ -96,7 +96,7 @@ We'll wipe everything and build exactly what we need from scratch.
 
 3. Click **Reset Configuration**
 
-4. Click **Yes** to confirm.
+4. Click **OK** to confirm.
 
 5. The mAP will reboot with a completely blank configuration. Close the WinBox session — the credentials you just set no longer exist on the device.
 
@@ -124,7 +124,7 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 1. Navigate to **Bridge**
 
-2. Click **Add New** (the + button)
+2. Click **New**
 
 3. Configure:
    - **Name:** br-fallback
@@ -136,7 +136,7 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 5. From the Bridge window, click the **Ports** tab
 
-6. Click **Add New**:
+6. Click **New**:
    - **Interface:** ether2
    - **Bridge:** br-fallback
    - **Comment:** Fallback ETH2
@@ -149,7 +149,7 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 8. Navigate to **IP** → **Addresses**
 
-9. Click **Add New**:
+9. Click **New**:
    - **Address:** 192.168.89.1/27
    - **Interface:** br-fallback
    - **Comment:** Fallback management IP
@@ -160,7 +160,7 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 11. Navigate to **IP** → **Pool**
 
-12. Click **Add New**:
+12. Click **New**:
     - **Name:** fallback-pool
     - **Addresses:** 192.168.89.10-192.168.89.30
     - **Comment:** Fallback DHCP pool
@@ -171,7 +171,7 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 14. Navigate to **IP** → **DHCP Server**
 
-15. Click **Add New**:
+15. Click **New**:
     - **Name:** fallback-dhcp
     - **Interface:** br-fallback
     - **Address Pool:** fallback-pool
@@ -182,7 +182,7 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 17. In the **DHCP Server** window, click the **Networks** tab
 
-18. Click **Add New**:
+18. Click **New**:
     - **Address:** 192.168.89.0/27
     - **Gateway:** 192.168.89.1
     - **DNS Servers:** 192.168.89.1
@@ -192,9 +192,9 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 ### Configure Fallback Wi-Fi
 
-20. Navigate to **Wireless** → **Security Profiles**
+20. Navigate to **Wireless** → **Wireless** → **Security Profiles**
 
-21. Click **Add New**:
+21. Click **New**:
     - **Name:** fallback-psk
     - **Mode:** dynamic keys
     - **Authentication Types:** WPA2 PSK
@@ -204,26 +204,26 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 23. Navigate to **Wireless** → **Wireless** (the submenu, not the top-level menu)
 
-    > **Note:** On RouterOS 7.x you'll see both a **WiFi** menu and a **Wireless** menu. Use **Wireless** → **Wireless** to access the legacy wireless interface where wlan1 lives.
+    > **Note:** On RouterOS 7.x you'll see both a **WiFi** menu and a **Wireless** menu. Use **Wireless** → **Wireless** → **WiFi Interfaces** to access the legacy wireless interface where wlan1 lives.
 
 24. Double-click **wlan1** to edit it and click the **Wireless** tab:
     - **Mode:** ap bridge
     - **Band:** 2GHz-only-N
     - **Channel Width:** 20MHz
-    - **Frequency:** 2412
+    - **Frequency:** 2412 (or **auto** if in a class)
     - **SSID:** mAP-Fallback
     - **Security Profile:** fallback-psk
     - **Country:** united states (or your country)
 
 25. Click **Apply** and then **OK**
 
-26. On the **Wireless** interface list, select **wlan1** and click **Enable**.
+26. On the **WiFi Interfaces** interface list, select **wlan1** and click **Enable**.
 
 ### Add Wi-Fi to Fallback Bridge
 
 27. Navigate to **Bridge** → **Ports**
 
-28. Click **Add New**:
+28. Click **New**:
     - **Interface:** wlan1
     - **Bridge:** br-fallback
     - **Comment:** Fallback Wi-Fi
@@ -232,7 +232,7 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 ### Test Fallback Configuration
 
-30. Set your laptop back to DHCP.
+30. Set your laptop back to DHCP (if it isn't already).
 
 31. Disconnect and reconnect the ethernet cable to the mAP's ether2 port.
 
@@ -260,7 +260,7 @@ Now we configure the mAP to get internet from whatever network it's plugged into
 ### The Design
 
 The mAP uses ether1 for everything upstream:
-- When plugged into your main router's trunk port (ether5), it gets a management IP from the VLAN 255 DHCP server and carries tagged VLANs 20/30/40
+- When plugged into your main router's trunk port (ether8/5), it gets a management IP from the VLAN 255 DHCP server and carries tagged VLANs 20/30/40
 - When plugged into any other network (hotel, coffee shop, client site), it gets a WAN IP via DHCP from that network
 - A WireGuard tunnel (Lab 16.5) handles secure connectivity back to your lab in travel mode
 
@@ -268,7 +268,7 @@ The mAP uses ether1 for everything upstream:
 
 1. Navigate to **Interfaces**
 
-2. Click **Add New** → **VLAN**
+2. Click **New** → **VLAN**
 
 3. Configure:
    - **Name:** vlan20
@@ -289,9 +289,9 @@ The mAP uses ether1 for everything upstream:
 
 ### Create Management Bridge
 
-6. Navigate to **Bridge**
+6. Navigate to **Bridge** → **Bridge**
 
-7. Click **Add New**:
+7. Click **New**:
    - **Name:** br-mgmt
    - **Comment:** Management bridge VLAN 255
 
@@ -299,7 +299,7 @@ The mAP uses ether1 for everything upstream:
 
 9. Click the **Ports** tab
 
-10. Click **Add New**:
+10. Click **New**:
     - **Interface:** ether1
     - **Bridge:** br-mgmt
     - **Comment:** Trunk native VLAN 255
@@ -310,15 +310,16 @@ The mAP uses ether1 for everything upstream:
 
 12. Navigate to **IP** → **DHCP Client**
 
-13. Click **Add New**:
-    - **Interface:** ether1
+13. Click **New**:
+    - **Interface:** br-mgmt
     - **Use Peer DNS:** yes
+    - **Use Peer NTP:** yes
     - **Add Default Route:** yes
     - **Comment:** WAN DHCP client
 
 14. Click **Apply** and then **OK**
 
-    > **How this works:** When plugged into your main router's trunk port, ether1 receives untagged frames on VLAN 255 and the DHCP client picks up an address in the 10.10.255.x range. When plugged into any other network, it picks up whatever address that network hands out. The default route updates automatically in both cases.
+    > **How this works:** When plugged into your main router's trunk port, br-mgmt receives untagged frames on VLAN 255 and the DHCP client picks up an address in the 10.10.255.x range. When plugged into any other network, it picks up whatever address that network hands out. The default route updates automatically in both cases.
 
 ### Configure DNS
 
@@ -332,7 +333,7 @@ The mAP uses ether1 for everything upstream:
 
 ### Test Trunk Connectivity
 
-18. Plug the mAP's ether1 into your main router's expansion port (ether5).
+18. Plug the mAP's ether1 into your main router's expansion port (ether8/5).
 
 19. Navigate to **IP** → **DHCP Client** and verify the status shows **bound** with an address in the **10.10.255.x** range.
 
@@ -361,10 +362,11 @@ Before starting, verify:
 
 Lab 16.5 requires simultaneous access to both the mAP and the main router. Before starting:
 
-1. Move your laptop cable from the mAP to your **main router's backdoor port** (ether4 on the hEX S, 192.168.88.1)
+1. Move your laptop cable from the mAP to your **main router's backdoor port** (ether8 on the L009, ether4 on the hEX S, 192.168.88.1)
 2. Open a WinBox session to your **main router** via Neighbors or IP
 3. Open a **second WinBox session** to the mAP by typing **10.10.255.x** (the IP the mAP received from the main router's DHCP) directly into the Connect To field — it won't appear in Neighbors from this connection
-4. Log in with your mAP password
+   > If you can't find the IP address for your mAP, on your main router click on **IP** → **DHCP Server** → **Leases** and the mAP will be listed there. This is the IP address to connect to.
+5. Log in with your mAP password
 
 Keep both sessions open throughout this lab.
 
@@ -374,7 +376,7 @@ Keep both sessions open throughout this lab.
 
 1. Navigate to **WireGuard**
 
-2. Click **Add New**:
+2. Click **New**:
    - **Name:** wg-home
    - **Listen Port:** 51820
    - **MTU:** 1420
@@ -391,7 +393,7 @@ Keep both sessions open throughout this lab.
 
 6. Navigate to **IP** → **Addresses**
 
-7. Click **Add New**:
+7. Click **New**:
    - **Address:** 10.255.255.2/24
    - **Interface:** wg-home
    - **Comment:** WireGuard tunnel IP
@@ -402,10 +404,14 @@ Keep both sessions open throughout this lab.
 
 9. Navigate to **WireGuard** → **Peers** tab
 
-10. Click **Add New**:
+10. Click **New**:
     - **Interface:** wg-home
-    - **Public Key:** Switch to your **main router** WinBox session → navigate to **WireGuard** → double-click **wg-server** → copy the **Public Key** field. This is the **interface** public key, not a peer key. Paste it here.
-    - **Endpoint:** [Your DDNS address from Lab 12.4]:51820
+    - **Public Key:** 
+       - Switch to your **main router** WinBox session → navigate to **WireGuard** → double-click **wg-server** → copy the **Public Key** field. This is the **interface** public key, not a peer key.
+       - Switch back to your mAP and paste the copied key into the **Public Key** window.
+    - **Endpoint:** 
+       - Switch to your **main router** WinBox session → navigate to **IP** → **Cloud** → copy the **DNS Name** field.
+       - Switch back to your mAP and paste it, adding `:51820` at the end.
     - **Allowed Address:** 10.255.255.0/24, 10.10.0.0/16
     - **Persistent Keepalive:** 00:00:25
     - **Comment:** Main router
@@ -418,7 +424,7 @@ Keep both sessions open throughout this lab.
 
 12. Navigate to **WireGuard** → **Peers**
 
-13. Click **Add New**:
+13. Click **New**:
     - **Interface:** wg-server
     - **Public Key:** [mAP's public key from step 5]
     - **Allowed Address:** 10.255.255.2/32
@@ -467,55 +473,33 @@ Think of RoMON as a Layer 2 management tunnel between MikroTik devices. When you
 
 3. Configure:
    - **Enabled:** ✓ Checked
-   - **Secrets:** [Create a shared secret and record it — use the same on all devices]
+   - **Secrets:** Enter the same RoMON secret you created on the main router in Lab 3. Check your lab notes if you don't remember it.
    - **ID:** Leave as default (MAC-based)
 
-4. Click **Apply** and then **OK**
+4. Click **Apply**
 
 ### Configure RoMON Ports
 
-5. In the RoMON window, click the **Ports** tab
-
-6. Click **Add New**:
-   - **Interface:** ether1
-   - **Forbid:** Unchecked
-   - **Cost:** 100
-
-7. Click **Apply** and then **OK**
-
-8. Click **Add New** again:
-   - **Interface:** br-fallback
-   - **Forbid:** Unchecked
-   - **Cost:** 100
-
-9. Click **Apply** and then **OK**
+5. Click the **Ports** tab and verify the default entry shows **Interface: all** — this means RoMON will operate on every interface. No changes needed.
 
 ### Enable RoMON on Main Router
 
-10. Connect to your main router via WinBox
+6. Connect to your main router via WinBox
 
-11. Navigate to **Tools** → **RoMON**
+7. Navigate to **Tools** → **RoMON**
 
 12. Click **Settings**:
-    - **Enabled:** ✓ Checked
-    - **Secrets:** [Same secret as mAP]
+    - Verify the following:
+       - **Enabled:** ✓ Checked
+       - **Secrets:** [Populated]
 
-13. Click **Apply** and then **OK**
+16. Click the **Ports** tab and verify the default entry shows **Interface: all** — this means RoMON will operate on every interface. No changes needed.
 
-14. Click the **Ports** tab
-
-15. Add your expansion port (the trunk port to the mAP):
-    - **Interface:** ether5 (or ether8 on 8-port devices)
-    - **Forbid:** Unchecked
-    - **Cost:** 100
-
-16. Click **Apply** and then **OK**
+17. Click **Apply** and then **OK** if any changes were made.
 
 ### Discover Devices via RoMON
 
-17. On either device in WinBox, navigate to **Tools** → **RoMON**
-
-18. Click the **Discover** tab (or button)
+17. On either device in WinBox, click the **Discover** tab (or button)
 
 19. You should see both devices listed with their MAC addresses and identities.
 
@@ -545,9 +529,9 @@ The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll 
 
 ### Create Management Wi-Fi Security Profile
 
-1. Navigate to **Wireless** → **Security Profiles**
+1. Navigate to **Wireless** → **Wireless** → **Security Profiles**
 
-2. Click **Add New**:
+2. Click **New**:
    - **Name:** mgmt-security
    - **Mode:** dynamic keys
    - **Authentication Types:** WPA2 PSK
@@ -559,13 +543,13 @@ The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll 
 
 4. Navigate to **Wireless** → **WiFi Interfaces**
 
-5. Click **Add New** → **Virtual**
+5. Click **New** → **Virtual**
 
 6. Configure:
    - **Name:** wlan2
    - **Mode:** ap bridge
    - **Master Interface:** wlan1
-   - **SSID:** LabMgmt
+   - **SSID:** Student[#]
    - **Security Profile:** mgmt-security
 
 7. Click **Apply** and then **OK**
@@ -574,7 +558,7 @@ The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll 
 
 8. Navigate to **Bridge** → **Ports**
 
-9. Click **Add New**:
+9. Click **New**:
     - **Interface:** wlan2
     - **Bridge:** br-mgmt
     - **Comment:** Management Wi-Fi
@@ -583,7 +567,7 @@ The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll 
 
 ### Test Management Wi-Fi
 
-11. On your laptop or phone, look for the **LabMgmt** SSID.
+11. On your laptop or phone, look for the **Student[*]** SSID you created in step 6 above.
 
 12. Connect using the password you created.
 
@@ -651,23 +635,3 @@ Your mAP is now:
 | Need to manage main router | Connect to mAP, use RoMON to reach main router |
 
 ---
-
-## Lab Notes — Lab 16
-
-| Item | Value |
-|------|-------|
-| mAP Identity | mAP-Remote |
-| mAP Admin Password | |
-| mAP WAN IP (from DHCP) | |
-| mAP WireGuard Public Key | |
-| Fallback Network | 192.168.89.0/27 |
-| Fallback SSID | mAP-Fallback |
-| Fallback Password | |
-| Management SSID | LabMgmt |
-| Management Password | |
-| RoMON Secret | |
-
----
-
-*Document Version: 2.0*
-*Last Updated: July 2026*
