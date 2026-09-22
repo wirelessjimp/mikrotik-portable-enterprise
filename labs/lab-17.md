@@ -6,6 +6,8 @@ In Lab 16, you manually built a fallback configuration for the mAP — a bridge,
 
 This lab teaches you how to turn that manual work into a reusable script. Once you understand RSC files, you can configure a fresh MikroTik device in seconds instead of minutes.
 
+>**Note:** For this lab, you need to make sure you are connected to your mAP on Ether2 because the configurations on the mAP are going to change multiple times.
+
 ---
 
 ## Lab 17.1 — What Are RSC Files?
@@ -36,10 +38,10 @@ An RSC file is a plain text file containing MikroTik CLI commands. When you expo
 
 4. To save it to a file:
    ```
-   /export file=current-config
+   /export file=lab17-current-config
    ```
 
-5. Navigate to **Files** and download `current-config.rsc`
+5. Navigate to **Files** and download `lab17-current-config.rsc`
 
 6. Open the file in any text editor — you'll see commands like:
    ```
@@ -162,37 +164,43 @@ add bridge=br-fallback interface=wlan1 comment="Fallback Wi-Fi"
 
 Let's extract just the fallback portion from your mAP's configuration and save it as a reusable script.
 
-### Export Current Configuration
+### Build the Fallback Script
 
-1. On the mAP, open **New Terminal**
+1. Open the `lab17-current-config.rsc` file you downloaded in Lab 17.1
 
-2. Run:
-   ```
-   /export file=mAP-full-export
-   ```
+2. Save a copy as `mAP-fallback-config.rsc`
 
-3. Navigate to **Files**
+3. Delete every section that is NOT related to the fallback configuration. Keep:
+   - `/interface bridge` — only `br-fallback`
+   - `/interface wireless security-profiles` — only `fallback-psk`
+   - `/interface wireless` — only wlan1 with fallback settings
+   - `/interface bridge port` — only ether2 and wlan1 in `br-fallback`
+   - `/ip pool` — only `fallback-pool`
+   - `/ip dhcp-server` — only `fallback-dhcp`
+   - `/ip dhcp-server network` — only `192.168.89.0/27`
+   - `/ip address` — only `192.168.89.1` on `br-fallback`
 
-4. Download `mAP-full-export.rsc` to your laptop
+4. Add the WPA2 password back into the security profile — exports strip passwords for security
 
-### Extract Fallback Section
+   **Before (from export — password missing):**
+   
+```
+add authentication-types=wpa2-psk mode=dynamic-keys name=fallback-psk
+supplicant-identity=""
+```
 
-5. Open `mAP-full-export.rsc` in a text editor
+   **After (password added):**
 
-6. Create a new blank text file and save it as `mAP-fallback-config.rsc`
+```
+add authentication-types=wpa2-psk mode=dynamic-keys name=fallback-psk
+wpa2-pre-shared-key="YourFallbackPassword" supplicant-identity=""
+```
 
-7. From `mAP-full-export.rsc`, find and copy the sections related to fallback into your new file:
-   - `/interface bridge` — look for `br-fallback`
-   - `/interface bridge port` — look for entries with `br-fallback`
-   - `/ip address` — look for `192.168.89.1`
-   - `/ip pool` — look for `fallback-pool`
-   - `/ip dhcp-server` — look for `fallback-dhcp`
-   - `/ip dhcp-server network` — look for `192.168.89.0`
-   - `/interface wireless security-profiles` — look for `fallback-security`
-   - `/interface wireless` — look for wlan1 settings
-   - Additional `/interface bridge port` — look for wlan1 in br-fallback
+   > **Watch out:** `supplicant-identity` is NOT the password — it's a client identity field used in 802.1X. The password goes in `wpa2-pre-shared-key`. This is the most common mistake when editing exported security profiles.
 
-8. Add comments explaining each section. Use `#` at the beginning of a line for comments:
+> **Why this approach?** MikroTik exports are in dependency order — pools before servers, bridges before ports. Deleting lines preserves that order. Building from scratch requires you to get the order right yourself.
+
+5. Add comments explaining each section. Use `#` at the beginning of a line for comments:
    ```
    # Fallback bridge for emergency access
    /interface bridge add name=br-fallback
@@ -201,9 +209,11 @@ Let's extract just the fallback portion from your mAP's configuration and save i
    /ip address add address=192.168.89.1/27 interface=br-fallback
    ```
 
-9. Save your changes
+6. Save your changes
 
 You now have a reusable script for the fallback configuration.
+
+> **Checkpoint:** Your finished script should be around 25-30 lines (without comments). If it's significantly longer, you're including sections that aren't fallback. If it's under 15 lines, you're missing something — check the list in step 3.
 
 ---
 
@@ -211,13 +221,60 @@ You now have a reusable script for the fallback configuration.
 
 Now let's test the script on a fresh device (or the same device after a reset).
 
+### Reset and Restore (Class Exercise)
+
+This is the real test — prove your script works by destroying the config and rebuilding from it.
+
+1. Navigate to **System** → **Reset Configuration**
+   - Check **No Default Configuration**
+   - Click **Reset Configuration**
+   - Click **OK**
+
+2. The mAP reboots with a blank config. Ensure your laptop is directly connected to **ether2** on the mAP
+
+3. Open WinBox and connect via MAC discovery (no IP address or password exists yet)
+
+4. Navigate to **Files** and upload your `mAP-fallback-config.rsc` from your laptop
+
+5. Open **New Terminal** and run:
+
+```
+/import file-name=mAP-fallback-config.rsc
+```
+
+7. Watch each command execute. When complete, WinBox will likely disconnect — the network configuration just changed underneath you
+
+> **Alternative:** If `/import` fails, open the script in a text editor on your laptop, select all, copy, and paste directly into the WinBox terminal. This bypasses the import command and executes each line individually.
+
+8. Verify: disconnect from ether2, connect to the **mAP-Fallback** SSID, and confirm you get a 192.168.89.x address
+
+> **If it fails:** This is the learning moment. Read the error, find the missing or broken line in your script, fix it, and try again. Your classmates' scripts may have different errors — help each other debug.
+
+### Restore Full Configuration
+
+The fallback script proved your scripting skills, but the mAP needs its full configuration back to continue with the remaining labs.
+
+1. Upload the binary backup you created at the end of Lab 16 (`mAP-backup.backup`) to the mAP via **Files**
+
+2. Select your backup file and click **Restore**
+
+3. The mAP reboots with the complete configuration — VLANs, bridges, WireGuard, everything
+
+> **This is why we back up.** The RSC script rebuilt one piece. The binary backup restores everything. Different tools, different jobs — just like Lab 6 explained.
+
+---
+
+## Lab 17 — Script Reference
+
+The following sections provide ready-made scripts for common configurations. These are not hands-on exercises — use them as templates when building your own deployments.
+
 ### Method 1: Upload and Import via WinBox
 
 1. Connect to the target device via WinBox
 
 2. Navigate to **Files**
 
-3. Drag and drop your `.rsc` file into the Files window (or use the Upload button)
+3. Use the Upload button to upload `.rsc` file into the Files window (or use the Upload button)
 
 4. Open **New Terminal**
 
