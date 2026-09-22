@@ -264,62 +264,6 @@ The fallback script proved your scripting skills, but the mAP needs its full con
 
 ---
 
-## Lab 17 — Script Reference
-
-The following sections provide ready-made scripts for common configurations. These are not hands-on exercises — use them as templates when building your own deployments.
-
-### Method 1: Upload and Import via WinBox
-
-1. Connect to the target device via WinBox
-
-2. Navigate to **Files**
-
-3. Use the Upload button to upload `.rsc` file into the Files window (or use the Upload button)
-
-4. Open **New Terminal**
-
-5. Run:
-   ```
-   /import file-name=mAP-fallback-config.rsc
-   ```
-
-6. Watch the terminal — each command executes and shows its result
-
-7. If there are errors, the terminal shows which line failed
-
-### Method 2: Copy/Paste into Terminal
-
-For quick testing or small scripts:
-
-1. Connect to the device via WinBox
-
-2. Open **New Terminal**
-
-3. Open your `.rsc` file in a text editor
-
-4. Copy the entire contents
-
-5. Right-click in the WinBox terminal and paste
-
-6. Commands execute immediately
-
-> **Warning:** Be careful with copy/paste on large scripts. If the connection drops mid-paste, you'll have a partial configuration.
-
-### Method 3: FTP/SFTP Upload
-
-For automated deployment:
-
-1. Enable FTP or SSH on the target device
-
-2. Upload the `.rsc` file via FTP/SFTP to the device's file system
-
-3. SSH in and run:
-   ```
-   /import file-name=mAP-fallback-config.rsc
-   ```
-
----
-
 ## Lab 17.6 — Building Modular Scripts
 
 As you build more configurations, you'll want to organize scripts by function. Here's a recommended structure:
@@ -621,81 +565,59 @@ add bridge=br-mgmt interface=wlan2 comment="Management Wi-Fi"
 
 ---
 
-## Lab 17.11 — Testing Your Script
+## Lab 17 — Script Reference
 
-Let's validate the script works by applying it to a factory-reset device.
+The following sections provide ready-made scripts for common configurations. These are not hands-on exercises — use them as templates when building your own deployments.
 
-### Reset the mAP
+### Method 1: Upload and Import via WinBox
 
-1. Connect to the mAP via WinBox
+1. Connect to the target device via WinBox
 
-2. Navigate to **System** → **Reset Configuration**
+2. Navigate to **Files**
 
-3. Check:
-   - **No Default Configuration:** ✓
-   - **Do Not Backup:** ✓
+3. Use the Upload button to upload `.rsc` file into the Files window (or use the Upload button)
 
-4. Click **Reset Configuration** and confirm
+4. Open **New Terminal**
 
-### Prepare the Script
+5. Run:
+   ```
+   /import file-name=mAP-fallback-config.rsc
+   ```
 
-5. Open the complete deployment script from Lab 17.10
+6. Watch the terminal — each command executes and shows its result
 
-6. Replace all placeholder values:
-   - `DEVICE_NAME` → your device name
-   - `ADMIN_PASSWORD` → your password
-   - `FALLBACK_WIFI_PASSWORD` → your fallback Wi-Fi password
-   - `MGMT_WIFI_PASSWORD` → your management Wi-Fi password
-   - `MAIN_ROUTER_WG_PUBKEY` → your main router's WireGuard public key
-   - `DDNS_ADDRESS` → your DDNS hostname
-   - `ROMON_SECRET` → your RoMON secret
-   - `COUNTRY_CODE` → your country
+7. If there are errors, the terminal shows which line failed
 
-7. Save the file as `mAP-deploy.rsc`
+### Method 2: Copy/Paste into Terminal
 
-### Apply the Script
+For quick testing or small scripts:
 
-8. After the mAP reboots from reset, configure your laptop with static IP:
-   - IP: 192.168.88.2
-   - Mask: 255.255.255.0
+1. Connect to the device via WinBox
 
-9. Open WinBox and connect to the mAP via MAC address or 192.168.88.1
+2. Open **New Terminal**
 
-10. Navigate to **Files**
+3. Open your `.rsc` file in a text editor
 
-11. Upload `mAP-deploy.rsc`
+4. Copy the entire contents
 
-12. Open **New Terminal**
+5. Right-click in the WinBox terminal and paste
 
-13. Run:
-    ```
-    /import file-name=mAP-deploy.rsc
-    ```
+6. Commands execute immediately
 
-14. Watch the commands execute
+> **Warning:** Be careful with copy/paste on large scripts. If the connection drops mid-paste, you'll have a partial configuration.
 
-### Verify Configuration
+### Method 3: FTP/SFTP Upload
 
-15. Set your laptop back to DHCP
+For automated deployment:
 
-16. Connect to the **mAP-Fallback** Wi-Fi
+1. Enable FTP or SSH on the target device
 
-17. You should get a 192.168.89.x address
+2. Upload the `.rsc` file via FTP/SFTP to the device's file system
 
-18. Open WinBox and connect to 192.168.89.1
-
-19. Verify:
-    - Identity is set correctly
-    - All VLAN interfaces exist
-    - WireGuard interface exists
-    - RoMON is enabled
-
-20. Connect ETH1 to your main router's trunk port
-
-21. Verify:
-    - Can ping 10.10.255.1
-    - WireGuard handshake completes
-    - RoMON discovers main router
+3. SSH in and run:
+   ```
+   /import file-name=mAP-fallback-config.rsc
+   ```
 
 ---
 
@@ -712,17 +634,3 @@ You now understand:
 **The payoff:** You can now configure a factory-fresh MikroTik device in under a minute by importing a script. No more clicking through 50 menus.
 
 ---
-
-## Lab Notes — Lab 17
-
-| Item | Value |
-|------|-------|
-| Fallback script location | |
-| Trunk script location | |
-| Complete deploy script location | |
-| Script tested on | ☐ mAP ☐ hAP ☐ Other: |
-
----
-
-*Document Version: Draft 1.0*
-*Last Updated: March 2026*
