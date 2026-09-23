@@ -14,20 +14,22 @@ The MikroTik Packet Sniffer captures traffic on any interface and saves it in PC
 
 1. In WinBox, navigate to **Tools** → **Packet Sniffer**
 
-2. Configure the capture:
-   - **Interface:** Select an interface to capture (e.g., vlan255bridge)
-   - **File Name:** Click the arrow, enter a name (e.g., `capture1`)
-   - **File Limit:** Set a size limit if desired (e.g., 1000 KiB)
+2. On the **General** tab:
+   - **File Name:** Click the **+** and enter a name with the `.pcapng` extension (e.g., `capture1.pcapng`)
+   - **File Limit:** Set a size limit (e.g., `1000` kb)
+   - Leave Memory Limit and other settings at defaults
 
-3. Optional: Set pre-capture filters to limit what's captured:
-   - **Filter Stream:** Check to enable filtering
-   - **Filter Protocol:** IP, IPv6, etc.
-   - **Filter Port:** Specific port number
-   - **Filter IP Address:** Source or destination IP
+3. Click the **Filter** tab to narrow what's captured:
+   - **Interfaces:** Click **+** and select the interface to capture on (e.g., `ether1`, `vlan20`, `bridge`)
+   - **IP Address:** Click **+** to filter by a specific IP
+   - **Port:** Click **+** to filter by port number
+   - **Direction:** Select `rx`, `tx`, or leave as `any`
+
+   > **Tip:** Leave all filters empty to capture everything. Add filters when you know what you're looking for and want to reduce noise.
 
 4. Click **Apply**
 
-5. Click **Start** to begin capturing
+5. Click **Start** under Actions on the right
 
 6. Generate some traffic (ping, browse, etc.)
 
@@ -35,7 +37,7 @@ The MikroTik Packet Sniffer captures traffic on any interface and saves it in PC
 
 ### View Captured Packets
 
-8. Click the **Packets** tab to view captured packets in the MikroTik interface
+8. Click the **Packets** button on the right-hand side to view captured packets in the MikroTik interface
 
 9. This view is limited — for full analysis, download the file
 
@@ -43,9 +45,9 @@ The MikroTik Packet Sniffer captures traffic on any interface and saves it in PC
 
 10. Navigate to **Files** in the left menu
 
-11. Find your capture file (e.g., `capture1.pcap`)
+11. Find your capture file (e.g., `capture1.pcapng`)
 
-12. Right-click and select **Download** (or drag to your desktop)
+12. Click and select **Download** 
 
 13. Open the file in Wireshark for full analysis
 
@@ -59,14 +61,16 @@ Instead of capturing to a file, you can stream packets directly to Wireshark in 
 
 1. Navigate to **Tools** → **Packet Sniffer**
 
-2. Configure:
-   - **Interface:** Select the interface to capture
+2. Click the **Filter** tab:
+   - **Interfaces:** Click **+** and select the interface to capture
+
+3. Click the **Streaming** tab:
    - **Streaming Enabled:** ✓ Checked
    - **Server:** Enter your computer's IP address
    - **Port:** 37008 (default)
 
-3. Click **Apply** (don't click Start yet)
-
+4. Click **Apply** (don't click Start yet)
+   
 ### Configure Wireshark to Receive
 
 4. Open Wireshark on your computer
@@ -75,7 +79,8 @@ Instead of capturing to a file, you can stream packets directly to Wireshark in 
 
 6. Click the gear icon next to it to configure:
    - **Listen port:** 37008
-   - **Payload type:** TZSP
+   - **Payload type:** tzsp
+   >**NOTE:** Payload type is case-sensitive. If you type `TZSP` instead of `tzsp` Wireshark won't decode the dump correctly.
 
 7. Click **Start** to begin listening
 
@@ -121,6 +126,7 @@ Torch displays:
    - **Dst. Address:** Filter by destination IP (optional)
    - **Port:** Filter by port number (optional)
    - **Protocol:** Filter by protocol (optional)
+   - **Entry Timeout:** 00:00:10 (10 seconds to allow for easier reading)
 
 3. Click **Start**
 
