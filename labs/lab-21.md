@@ -32,27 +32,35 @@ If you completed Lab 5 (Containers), your USB drive is already formatted and mou
 
 5. Find the **usb1** folder
 
-6. Drag and drop files from your computer into the usb1 folder (or use the Upload button)
+6. Create a small test file on your computer — open a text editor, type `TFTP test file`, and save it as `tftp-test.txt`
+  
+7. In the Files window, click **Upload** under Actions on the right
+
+8. Select your `tftp-test.txt` file — it uploads to the root of the file system
+
+9. Drag `tftp-test.txt` from the root into the `usb1` folder
+
+> **Note:** For this lab we're using a simple text file to verify TFTP works. In real deployments, this is where you'd place switch firmware images, configuration files, or any other files you need to serve over TFTP.
 
 ### Configure TFTP Server
 
-7. Navigate to **IP** → **TFTP**
+10. Navigate to **IP** → **TFTP**
 
-8. Click **Add New**:
+11. Click **New**:
     - **Enabled:** ✓ Checked
     - **IP Addresses:** Leave blank (allows all clients) or enter a subnet to restrict access
     - **Req. Filename:** The filename clients will request (e.g., `firmware.bin`)
-    - **Real Filename:** The actual file path (e.g., `/usb1/actual-firmware-file.bin`)
+    - **Real Filename:** The actual file path (e.g., `/usb1/tftp-test.txt`)
     - **Allow:** ✓ Checked
     - **Read Only:** ✓ Checked (recommended for security)
 
-9. Click **OK**
+9. Click **Apply & OK**
 
 ### Test TFTP Transfer
 
 10. From a client device, use a TFTP client to request the file:
     ```
-    tftp 10.10.255.1 -c get firmware.bin
+    tftp 10.10.255.1 -c get tftp-test.txt
     ```
 
 11. The file should transfer from the MikroTik's USB storage
@@ -84,31 +92,35 @@ For more flexible file transfers, enable the FTP server.
 
 6. Click the **Groups** tab
 
-7. Click **Add New**:
+7. Click **New**:
    - **Name:** ftp
    - **Policies:** ftp, read (add write if uploads needed)
 
-8. Click **OK**
+8. Click **Apply & OK**
 
 9. Click the **Users** tab
 
-10. Click **Add New**:
+10. Click **New**:
     - **Name:** ftpuser
     - **Group:** ftp
     - **Password:** [Create a password]
+    - **Confirm PAssword:** [Retype the password]
     - **Allowed Address:** (optional — restrict by IP)
 
 11. Click **OK**
 
 ### Connect via FTP
 
-12. From your computer, connect using any FTP client:
-    - **Host:** 10.10.255.1
+12. From your computer, connect using an FTP client:
+    - **Host:** 10.10.255.1 (use the gateway IP for whatever VLAN you're connected to)
     - **Username:** ftpuser
     - **Password:** [Your password]
     - **Port:** 21
 
-13. You can also use a browser: `ftp://10.10.255.1` (enter credentials when prompted)
+> **FTP client options:**
+> - **macOS:** Open Terminal and type `ftp 10.10.255.1`, or use [Cyberduck](https://cyberduck.io/) (free)
+> - **Windows:** Open File Explorer and type `ftp://10.10.255.1` in the address bar, or use [WinSCP](https://winscp.net/) (free)
+> - **Browser:** Most modern browsers (Chrome, Edge, Safari) have removed FTP support. Firefox still has limited support but may not work reliably. Use a dedicated FTP client instead.
 
 > **Security note:** FTP transmits credentials in plain text. Use only on trusted networks, or restrict access via the Available From setting.
 
@@ -122,11 +134,11 @@ Monitor interface utilization over time with built-in graphing.
 
 1. Navigate to **Tools** → **Graphing**
 
-2. Click **Add New**:
+2. Click **New**:
    - **Interface:** Select an interface (e.g., ether1 for WAN)
    - **Allow Address:** 0.0.0.0/0 (or restrict to management subnet)
 
-3. Click **OK**
+3. Click **Apply & OK**
 
 4. Repeat for other interfaces you want to monitor
 
@@ -134,13 +146,15 @@ Monitor interface utilization over time with built-in graphing.
 
 5. Click the **Interface Graphs** tab
 
-6. Click on an interface to view its graph
+6. Double-click on an interface to view its graph
 
 7. Available views:
    - **Daily:** Last 24 hours
    - **Weekly:** Last 7 days
    - **Monthly:** Last 30 days
    - **Yearly:** Last 365 days
+
+8. When finished, you can close the views.
 
 ### Real-Time Interface Stats
 
@@ -158,50 +172,46 @@ For real-time (not historical) stats:
 
 ## Lab 21.4 — Bandwidth Test
 
-<!-- TODO: Test Bandwidth Test tool — verify usefulness compared to iperf3 container from Lab 5. Questions: Is bandwidth-test.mikrotik.com still active? Any gotchas with authentication or firewall rules? Does this add value beyond iperf3? -->
+Test throughput between MikroTik devices or to a public bandwidth test server.
 
-Test throughput between MikroTik devices or to the bandwidth-test.mikrotik.com server.
-
-### Test to MikroTik's Public Server
+### Test to a Public Server
 
 1. Navigate to **Tools** → **Bandwidth Test**
 
 2. Configure:
-   - **Test To:** bandwidth-test.mikrotik.com
-   - **Protocol:** TCP or UDP
-   - **Direction:** both (transmit and receive)
-   - **Username:** (leave blank for public server)
-   - **Password:** (leave blank for public server)
+   - **Test To:** `mikrotik.speedtest.alagas.net`
+   - **Protocol:** TCP
+   - **Direction:** both
+   - **Username:** `speedtest`
+   - **Password:** `MikroTikSG`
 
 3. Click **Start**
 
 4. View results showing throughput in both directions
 
-### Test Between Two MikroTik Devices
+> **Note:** This is a community-run server. Availability may vary. TCP is recommended for testing through NAT.
 
-To test throughput between your main router and the mAP:
+### Test Between Your Own Devices
 
-**On the device acting as server:**
+For a more controlled test, use your own MikroTik devices.
 
-1. Navigate to **Tools** → **Bandwidth Server**
+5. On your **L009**, navigate to **Tools** → **BTest Server**:
+   - **Enabled:** ✓ Checked
+   - **Authenticate:** Unchecked
+   - Click **Apply** and **OK**
 
-2. Ensure **Enabled** is checked
+6. On your **mAP**, navigate to **Tools** → **Bandwidth Test**
 
-3. Note the authentication settings (or disable for testing)
-
-**On the device acting as client:**
-
-4. Navigate to **Tools** → **Bandwidth Test**
-
-5. Configure:
-   - **Test To:** [Server device's IP address]
+7. Configure:
+   - **Test To:** [Your L009's IP address]
    - **Protocol:** TCP
    - **Direction:** both
-   - **Username/Password:** (if authentication enabled on server)
 
-6. Click **Start**
+8. Click **Start**
 
-> **Use case:** Verify throughput between sites, test WireGuard tunnel performance, validate switch/cable capacity.
+9. Compare the results — testing between your own devices measures the actual link and device performance without internet variables.
+
+> **Note:** The original MikroTik public server (`bandwidth-test.mikrotik.com`) was shut down in 2025. Additional community servers may be available at [btest-rs](https://github.com/manawenuz/btest-rs).
 
 ---
 
