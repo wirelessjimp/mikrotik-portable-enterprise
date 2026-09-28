@@ -9,7 +9,7 @@ Hotspot creates a captive portal — guests connect to Wi-Fi, their device auto-
 - Guest Wi-Fi — show terms of service or welcome page
 - Demo environments — direct clients to a specific resource
 
-> **Tested Configuration:** This hotspot configuration was used at MWC Barcelona 2026 to redirect booth visitors to a landing page served by an nginx container.
+> **Tested Configuration:** This hotspot configuration is what is used in the classroom scenario for students to get a landing page served by an nginx container.
 
 ---
 
@@ -35,11 +35,13 @@ For a redirect-only hotspot (no login required), you add all your resources to t
 
 ## Lab 26.2 — Create a Guest Bridge
 
+> **Note:** If you haven't connected your laptop to your main router, do so now and log into your main router.
+
 If you don't already have a guest network, create one:
 
 1. Navigate to **Bridge**
 
-2. Click **Add New**:
+2. Click **New**:
    - **Name:** br-guest
    - **Comment:** Guest network
 
@@ -47,7 +49,8 @@ If you don't already have a guest network, create one:
 
 4. Navigate to **IP** → **Addresses**
 
-5. Click **Add New**:
+5. Click **New**:
+   - **Comment:** Guest network
    - **Address:** 10.10.50.1/24
    - **Interface:** br-guest
 
@@ -112,7 +115,7 @@ When a guest connects to the hotspot, MikroTik serves a login page. We're going 
 </html>
 ```
 
-Replace `172.17.0.4` with your actual landing page IP or URL.
+> **Note:** If you did Lab 5.4, `172.17.0.4` is the IP address of your web server from that exercise. If you skipped Lab 5, then replace `172.17.0.4` with your actual landing page IP or URL.
 
 ### Upload the Login Page
 
@@ -184,7 +187,7 @@ The **Walled Garden** tab (not IP List) works at the HTTP level, matching on hos
 
 ## Lab 26.6 — Test the Hotspot
 
-1. Add an unused ethernet port to the **br-guest** bridge, then connect a device (phone or laptop) to that port
+1. Add an unused ethernet port to the **br-guest** bridge (**ether6** is a good candidate), then connect a device (phone or laptop) to that port
 
 > **Note:** If your device has an integrated wireless interface (hAP series), you can also create a guest SSID and attach it to br-guest. On non-wireless devices like the hEX S, use a wired connection for testing.
 
