@@ -1,128 +1,181 @@
-# Lab 14 — Back to Home VPN
+# Lab 14 — WireGuard Clients
 
-*Prerequisites: Lab 12 (WireGuard server), or can be done standalone*
+*Prerequisites: Lab 12 (WireGuard server configured)*
 
-Back to Home (BTH) is MikroTik's simplified VPN feature. It uses WireGuard under the hood but handles all the key management and relay infrastructure automatically. Unlike the manual WireGuard setup in Labs 12-13, BTH routes all traffic through MikroTik's cloud relay — no port forwarding required, even when the router is behind NAT.
-
-BTH is ideal for:
-- Quick phone or laptop connections without manual key exchange
-- Demonstrating that VPN doesn't have to be complicated
-- Scenarios where the router is behind NAT and direct WireGuard isn't practical
-
-> **Note:** Back to Home requires MikroTik Cloud (DDNS) to be enabled. If you completed Lab 12.4, you're already set.
+This lab covers connecting peers to your WireGuard server:
+- **13.1** — MikroTik-to-MikroTik (site-to-site)
+- **13.2** — Laptop/desktop client (road warrior)
 
 ---
 
-## Lab 14.1 — Enable Back to Home
+## Lab 14.1 — MikroTik-to-MikroTik (Site-to-Site)
 
-1. Navigate to **IP** → **Cloud**
+> **Prerequisite:** This lab requires a second MikroTik device (such as a mAP). If you haven't set up your second device yet, skip to Lab 14.2 and return to this lab after completing Lab 13.
 
-2. Click the **BTH VPN** tab across the top of the Cloud window.
+This scenario connects a second MikroTik (like a mAP) back to your main router. Useful for:
+- Remote office connectivity
+- Portable lab kit that phones home
+- Class scenarios with multiple devices
 
-3. Set **Back To Home VPN** to **enabled**.
+### On the Remote MikroTik (Client Side)
+
+1. Navigate to **WireGuard** and click **New**:
+   - **Name:** wg-home
+   - **MTU:** 1420
+   - **Listen Port:** 51820
+
+2. Click **Apply** & **OK**
+
+3. Copy the **Public Key** from this interface:
+
+   > **Remote Site Public Key:** ________________________________
+
+4. Navigate to **IP** → **Addresses** and click **New**:
+   - **Address:** 10.255.255.2/24
+   - **Network:** 10.255.255.0
+   - **Interface:** wg-home
+   - **Comment:** WireGuard to home
+
+5. Click **Apply** & **OK**
+
+### Add Peer on Remote MikroTik
+
+6. Navigate to **WireGuard** → **Peers** tab
+
+7. Click **Add New** and configure:
+   - **Interface:** wg-home
+   - **Public Key:** [Server Public Key from Lab 12.1]
+   - **Endpoint:** [your DDNS address from Lab 12.4]
+   - **Endpoint Port:** 51820
+   - **Allowed Address:** 10.255.255.0/24, 10.10.0.0/16
+   > Click the **+** button to the right of the first field to add a second field for the second IP range.
+   - **Persistent Keepalive:** 00:00:25 (25 seconds)
+
+   > **Note:** Allowed Address defines what traffic goes through the tunnel. Include the VPN subnet (10.255.255.0/24) and your lab networks (10.10.0.0/16).
+
+8. Click **Apply** and **OK**
+
+### Add Peer on Server MikroTik (Your Main Router)
+
+9. On your main router, navigate to **WireGuard** → **Peers**
+
+10. Click **Add New** and configure:
+    - **Interface:** wg-server
+    - **Public Key:** [Remote Site Public Key from step 3]
+    - **Allowed Address:** 10.255.255.2/32
+    - **Comment:** Remote MikroTik
+
+    > **Note:** We don't set Endpoint here because the remote site initiates the connection. The server learns the endpoint dynamically.
+
+11. Click **Apply** and **OK**
+
+### Verify Connection
+
+12. On the remote MikroTik, navigate to **WireGuard** → **Peers**
+
+13. Check the **Last Handshake** column — it should show a recent timestamp.
+
+14. Test connectivity:
+    ```
+    /ping 10.255.255.1
+    ```
+
+15. If the ping succeeds, the tunnel is working.
+
+### Add Route for Lab Networks (Remote Side)
+
+For the remote MikroTik to reach your lab networks (10.10.x.x), add a route:
+
+16. Navigate to **IP** → **Routes**
+
+17. Click **Add New**:
+    - **Dst. Address:** 10.10.0.0/16
+    - **Gateway:** 10.255.255.1
+    - **Comment:** Lab networks via WireGuard
+
+18. Click **Apply** and **OK**
+
+---
+
+## Lab 14.2 — Laptop/Desktop Client (Road Warrior)
+
+This scenario lets you connect a laptop or desktop to your network from anywhere using the WireGuard app. For phones and tablets, see Lab 15 (Back to Home) — the MikroTik app makes mobile setup much simpler.
+
+### Install WireGuard on Your Laptop
+
+Before configuring the MikroTik, install the WireGuard client on your laptop:
+
+- **Windows:** Download from https://wireguard.com and install
+- **macOS:** Install from the App Store or https://wireguard.com
+- **Linux:** Install for your distribution (e.g., `sudo apt install wireguard`)
+
+### Create Peer on the Server
+
+1. On your main router, navigate to **WireGuard** → **Peers**
+
+2. Click **Add New** and configure:
+    - **Name:** Laptop Client
+    - **Interface:** wg-server
+    - **Private Key:** Click the **+** (plus) button next to the field, then select **auto** from the dropdown — this generates a keypair for the client
+    - **Allowed Address:** 10.255.255.10/32
+
+3. Scroll down to the **Client** fields and configure:
+    - **Client Address:** 10.255.255.10/32
+    - **Client DNS:** 10.10.255.1
+    - **Client Endpoint:** [your DDNS address from Lab 12.4]
+    - **Client Keepalive:** 00:00:25
+    - **Client Allowed Address:** Remove `::/0` and add `10.10.0.0/16` and `10.255.255.0/24`
+    > Click the **+** button to the right of the first field to add a second field for the second IP range.
 
 4. Click **Apply**
 
-5. Wait a few seconds, then verify the following fields have populated:
-   - **VPN Status:** running
-   - **VPN DNS Name:** [your router's BTH address, ending in `.vpn.mynetname.net`]
-   - **VPN Port:** [a dynamically assigned port number]
+   > **Note:** The **Public Key**, **Client Config**, and **Client QR** fields will be blank until after you click Apply. They populate automatically once the keypair is generated.
 
-   > **Note:** The VPN DNS Name for BTH (`.vpn.mynetname.net`) is different from your DDNS address (`.sn.mynetname.net`) from Lab 12. BTH uses MikroTik's relay infrastructure rather than connecting directly to your router's public IP.
+5. After applying, two fields at the bottom will populate:
+    - **Client Config** — a complete WireGuard configuration file, ready to paste
+    - **Client QR** — a QR code for mobile devices
 
-6. You will also see relay status fields showing which MikroTik relay servers your router has connected to. At least one relay should show as reachable.
+6. Copy the entire contents of the **Client Config** field.
 
-   > **Behind NAT?** If your router is behind another router, you'll see a warning at the bottom of the window: "Router is behind a NAT. Remote connection might not work." BTH is specifically designed to work through NAT using the relay — this warning can be safely ignored for BTH connections.
+7. Click **OK**
 
----
+### Configure the WireGuard Client
 
-## Lab 14.2 — Connect a Phone or Tablet
+8. Open the WireGuard app on your laptop.
 
-The simplest way to connect a mobile device is via QR code using the MikroTik app.
+9. Click **Add Tunnel** → **Add empty tunnel**
 
-1. On your router, click the **BTH VPN WireGuard** tab across the top of the Cloud window.
+10. Replace any existing content with the configuration you copied from step 6.
 
-2. The **VPN WireGuard Client Config** field shows a complete WireGuard configuration, and the **VPN WireGuard Client Config QRCode** is displayed below it.
+11. Name the tunnel (e.g., "Lab Router")
 
-3. Install the **MikroTik** app on your phone or tablet (iOS App Store or Google Play).
+12. Save the new tunnel.
 
-4. Open the app and tap **Join shared**.
+13. If you are connected to your router through the backdoor port, switch to a connection that will put you on the WAN side of the router (an existing Wi-Fi connection).
 
-5. Tap **Scan QR code** and allow the app to access your camera.
+14. In the new tunnel, click on **Activate**.
 
-6. Point your camera at the QR code displayed on your router screen.
+> **Behind NAT?** If your MikroTik is behind another router (e.g., a lab or office setup), the DDNS endpoint won't work because the WireGuard port isn't forwarded. For local testing, edit the tunnel configuration and change the Endpoint to your MikroTik's local IP address (e.g., `10.22.251.56:51820`). For remote access behind NAT, see Lab 15 (Back to Home) which uses MikroTik's cloud relay to avoid port forwarding.
 
-7. The tunnel configures automatically. Your phone is now connected to your network via BTH VPN.
+### Verify Connection
 
-   > **Note:** The BTH client configuration includes two peers — one relay peer and one server peer — and routes all traffic through the VPN (full tunnel). This is different from the manual WireGuard setup in Lab 13, which uses a split tunnel that only routes lab network traffic.
+13. With the tunnel active, try to reach your MikroTik:
+   - Open browser to `http://10.10.255.1` (or any lab IP)
+   - Or ping 10.255.255.1 from terminal
 
----
+14. On your MikroTik, check **WireGuard** → **Peers** — you should see a recent handshake and traffic counters for the Laptop Client peer.
 
-## Lab 14.3 — Connect a Laptop or Desktop
-
-For laptops and desktops using the standard WireGuard client:
-
-1. Navigate to **IP** → **Cloud** → **BTH VPN WireGuard** tab.
-
-2. Copy the entire contents of the **VPN WireGuard Client Config** field.
-
-3. Open the WireGuard app on your laptop:
-   - **Windows/macOS:** Click **Add Tunnel** → **Add empty tunnel**
-   - **Linux:** Create a new configuration file
-
-4. Paste the copied configuration into the tunnel.
-
-5. Name the tunnel (e.g., "MikroTik BTH") and save.
-
-6. Activate the tunnel.
-
-> **Note:** Each device that connects via BTH uses the same client config. For multiple simultaneous connections or per-device configs, use the manual WireGuard peer setup from Lab 13.2 instead.
-
----
-
-## Lab 14.4 — Verify Connection
-
-1. With the tunnel active, try to reach your MikroTik:
-   - Browse to your router's internal IP (e.g., `http://10.10.255.1`)
-   - Or ping an internal address from terminal
-
-2. On your MikroTik, navigate to **WireGuard** → **Peers** — the BTH-generated peer will appear in the list alongside any manually configured peers. Check for a recent **Last Handshake** timestamp and non-zero Rx/Tx counters.
-
----
-
-## Lab 14.5 — Back to Home vs Manual WireGuard
-
-| Feature | Back to Home | Manual WireGuard |
-|---------|--------------|------------------|
-| Setup complexity | Minimal — QR code or config paste | More steps, manual key exchange |
-| Key management | Automatic | Manual |
-| Tunnel type | Full tunnel (all traffic) | Split tunnel (lab networks only) |
-| NAT traversal | Built-in via relay | Requires port forwarding |
-| Multiple peers | Single shared config | Per-device configs, unlimited peers |
-| Customization | None | Full control |
-| Best for | Quick access, demos, NAT situations | Production, multi-site, specific routing |
-
-**When to use Back to Home:**
-- You need quick remote access without port forwarding
-- You're behind NAT and direct WireGuard won't reach your router
-- You're demonstrating VPN to non-technical users
-
-**When to use manual WireGuard:**
-- Multiple devices needing separate peer configs
-- Split tunneling (only route specific subnets)
-- Site-to-site connectivity
-- Integration with existing infrastructure
+> **Note:** The QR code generated in step 5 can also be used with the WireGuard mobile app. Open the app, tap **+** → **Scan from QR code**, and point the camera at the QR code displayed on the MikroTik screen. This is the fastest way to set up a phone connection. We'll complete the full setup in Lab 15 next.
 
 ---
 
 ## Lab 14 Summary
 
 You now have:
-- ✅ Back to Home VPN enabled and running
-- ✅ QR code connection for mobile devices via the MikroTik app
-- ✅ Client config for laptop and desktop WireGuard clients
-- ✅ Understanding of when to use BTH vs manual WireGuard
+- ✅ Site-to-site VPN between two MikroTik devices
+- ✅ Road warrior configuration for phones/laptops
+- ✅ Full access to your lab networks from anywhere
 
-Back to Home proves that VPN doesn't have to be complicated — and it works even when your router is behind NAT.
+WireGuard is now your secure tunnel back home.
 
 ---

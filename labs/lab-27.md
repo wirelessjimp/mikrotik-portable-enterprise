@@ -1,312 +1,264 @@
-# Lab 27 — DNS Configuration
+# Lab 27 — Hotspot (Captive Portal)
 
-*Prerequisites: Lab 1 (Initial Configuration), Lab 8 (DHCP)*
+*Prerequisites: Lab 1 (Initial Configuration), Lab 7 (Bridges/VLANs), Lab 8 (DHCP)*
 
-DNS is one of those things that "just works" until it doesn't. This lab covers practical DNS configuration on MikroTik — static entries for local hosts, secure upstream DNS, and forcing all DNS through your router.
+Hotspot creates a captive portal — guests connect to Wi-Fi, their device auto-redirects to a landing page. This lab configures a simple redirect-style hotspot where guests are sent directly to your content without requiring login.
 
----
+**Use cases:**
+- Trade show booth — redirect visitors to product info
+- Guest Wi-Fi — show terms of service or welcome page
+- Demo environments — direct clients to a specific resource
 
-## Lab 27.1 — Understanding MikroTik DNS
-
-By default, your MikroTik acts as a DNS server for clients and forwards queries to upstream servers (typically your ISP's DNS, learned via DHCP).
-
-**Current DNS settings:**
-
-1. Navigate to **IP** → **DNS**
-
-2. Review:
-   - **Servers:** Upstream DNS servers (where queries are forwarded)
-   - **Dynamic Servers:** DNS servers learned from DHCP client
-   - **Allow Remote Requests:** Must be checked for clients to use MikroTik as DNS
-   - **Cache Size:** How many entries to cache locally
-   - **Cache Used:** Current cache utilization
+> **Tested Configuration:** This hotspot configuration is what is used in the classroom scenario for students to get a landing page served by an nginx container.
 
 ---
 
-## Lab 27.2 — Static DNS Entries
+## Lab 27.1 — Hotspot Concepts
 
-Create local DNS names for devices on your network. Instead of remembering 10.10.255.50, you can use `server.lab` or `nas.home`.
+### How Hotspot Works
 
-### Add a Static Entry
+1. Client connects to Wi-Fi (or wired port)
+2. Client tries to access any website
+3. MikroTik intercepts the request and redirects to the login page
+4. After authentication (or redirect), client can access allowed resources
 
-1. Navigate to **IP** → **DNS** → **Static**
+### Walled Garden
+
+The "walled garden" defines what clients can access *before* authenticating:
+- IP addresses or subnets
+- Specific hostnames
+- Specific URLs
+
+For a redirect-only hotspot (no login required), you add all your resources to the walled garden and replace the login page with a simple redirect.
+
+---
+
+## Lab 27.2 — Create a Guest Bridge
+
+> **Note:** If you haven't connected your laptop to your main router, do so now and log into your main router.
+
+If you don't already have a guest network, create one:
+
+1. Navigate to **Bridge**
+
+2. Click **New**:
+   - **Name:** br-guest
+   - **Comment:** Guest network
+
+3. Click **Apply** and **OK**
+
+4. Navigate to **IP** → **Addresses**
+
+5. Click **New**:
+   - **Comment:** Guest network
+   - **Address:** 10.10.50.1/24
+   - **Interface:** br-guest
+
+6. Click **Apply** and **OK**
+
+7. Create a DHCP server for the guest network (see Lab 8):
+   - **Create a pool:** Navigate to **IP** → **Pool**, click **Add New**, define a range for your guest subnet
+   - **Build the server:** Navigate to **IP** → **DHCP Server**, click **Add New**, set the **Interface** to **br-guest** and assign the pool you just created
+   - **Add the network:** Under the **Networks** tab, add the guest subnet with the gateway and DNS pointing to your br-guest IP
+
+---
+
+## Lab 27.3 — Run Hotspot Setup
+
+MikroTik provides a setup wizard that creates most of the configuration:
+
+1. Navigate to **IP** → **Hotspot**
+
+2. Click **Hotspot Setup** on the right-hand side under Actions
+
+3. Follow the wizard:
+   - **Hotspot Interface:** br-guest
+   - **Local Address of Network:** 10.10.50.1 (should auto-fill)
+   - **Masquerade Network:** yes
+   - **Address Pool of Network:** 10.10.50.10-10.10.50.254
+   - **Select Certificate:** none
+   - **IP Address of SMTP Server:** 0.0.0.0 (skip)
+   - **DNS Servers:** 10.10.50.1
+   - **DNS Name:** (leave blank or enter a name like `guest.local`)
+   - **Name of Local Hotspot User:** admin
+   - **Password for the User:** [create a password]
+
+4. Click through to complete the wizard
+
+5. The wizard creates:
+   - Hotspot server on br-guest
+   - Hotspot profile
+   - DHCP pool (if not existing)
+   - NAT rules
+   - DNS configuration
+
+---
+
+## Lab 27.4 — Create Redirect Login Page
+
+When a guest connects to the hotspot, MikroTik serves a login page. We're going to replace the default login page with a simple redirect that sends guests straight to your landing page — no username or password required.
+
+### Create the Redirect Page
+
+1. On your computer, create a text file using your favorite text editor (BBEdit, Notepad++, or the built-in TextEdit on macOS / Notepad on Windows) named `login.html` with this content:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting...</title>
+    <meta http-equiv="refresh" content="0; url=http://172.17.0.4">
+</head>
+<body>
+    <p>Redirecting to welcome page...</p>
+</body>
+</html>
+```
+
+> **Note:** If you did Lab 5.4, `172.17.0.4` is the IP address of your web server from that exercise. If you skipped Lab 5, then replace `172.17.0.4` with your actual landing page IP or URL.
+
+### Upload the Login Page
+
+2. In WinBox, navigate to **Files**
+
+3. Find the **hotspot** folder
+
+4. Select the existing `login.html`, then click **Download** in the right-hand panel to save a backup copy to your computer. Then rename it on the router to `login.html.bak`
+
+5. Click **Upload** and select your new `login.html` — it will upload to the root of the file system
+
+6. Drag the uploaded `login.html` from the root into the **hotspot** folder
+
+### How It Works
+
+- Guest connects to Guest network (Wi-Fi or wired)
+- Device auto-detects captive portal
+- MikroTik serves your login.html
+- The meta refresh immediately redirects to your landing page
+- Landing page is in walled garden, so it loads without authentication
+- Guest has full access to walled garden resources
+
+---
+
+## Lab 27.5 — Configure Walled Garden
+
+Add destinations that guests can access without logging in.
+
+### Walled Garden IP List (IP-Based Access)
+
+The **Walled Garden IP List** tab allows traffic to specific IP addresses without authentication. Use this for containers, internal servers, and any non-web services.
+
+1. In the **IP** → **Hotspot** window, click the **Walled Garden IP List** tab
 
 2. Click **Add New**:
-   - **Name:** server.lab
-   - **Address:** 10.10.255.50
-   - **TTL:** 1d (or leave default)
-   - **Comment:** Lab server
+   - **Action:** accept
+   - **Server:** hotspot1
+   - **Dst. Address:** [IP of your landing page server]
+
+3. Click **Apply** and **OK**
+
+4. Repeat for additional destinations (containers, internal servers, etc.)
+
+### Example: Allow Access to Containers
+
+If running containers from Lab 5:
+
+```
+/ip hotspot walled-garden ip add dst-address=172.17.0.2 action=accept comment="OpenSpeedTest"
+/ip hotspot walled-garden ip add dst-address=172.17.0.3 action=accept comment="iperf3"
+/ip hotspot walled-garden ip add dst-address=172.17.0.4 action=accept comment="nginx content"
+```
+
+### Walled Garden by Hostname (HTTP-Based Access)
+
+The **Walled Garden** tab (not IP List) works at the HTTP level, matching on hostnames and URL patterns. Use this when you want to allow access to an external website by name — for example, allowing guests to reach a GitBook page or a public documentation site before logging in.
+
+1. In the **IP** → **Hotspot** window, click the **Walled Garden** tab
+
+2. Click **Add New**:
+   - **Action:** allow
+   - **Dst. Host:** `*.gitbook.io` (or your specific hostname)
+
+3. Click **Apply** and **OK**
+
+> **Note:** HTTP-based Walled Garden only catches web traffic. If guests need access to non-web services (DNS, NTP, speedtest), use the Walled Garden IP List instead.
+
+---
+
+## Lab 27.6 — Test the Hotspot
+
+1. Add an unused ethernet port to the **br-guest** bridge (**ether6** is a good candidate), then connect a device (phone or laptop) to that port
+
+> **Note:** If your device has an integrated wireless interface (hAP series), you can also create a guest SSID and attach it to br-guest. On non-wireless devices like the hEX S, use a wired connection for testing.
+
+2. The device should detect a captive portal and open a browser
+
+3. You should be redirected to your landing page
+
+4. Verify you can access all walled garden resources
+
+5. Verify you *cannot* access the internet (unless you added internet to the walled garden)
+
+### Troubleshooting
+
+**No captive portal detected:**
+- Some devices are slow to detect — try opening a browser manually to http://example.com
+- Check that the DHCP server is providing the correct DNS (10.10.50.1)
+
+**Redirect doesn't work:**
+- Verify login.html is in the correct hotspot folder
+- Check the meta refresh URL is correct
+- Verify the destination is in the walled garden
+
+**Can't access landing page:**
+- Verify the IP is in the walled garden IP list
+- Check firewall rules aren't blocking guest → container traffic
+
+---
+
+## Lab 27.7 — Optional: Allow Internet Access
+
+If you want guests to have internet access after viewing your landing page, you have two options:
+
+### Option 1: Auto-Login (No Authentication)
+
+Configure the hotspot to auto-authenticate clients:
+
+1. Navigate to **IP** → **Hotspot** → **Server Profiles**
+
+2. Edit your profile
+
+3. Set **Login By:** MAC
+
+4. Click **OK**
+
+Now clients are authenticated by MAC address automatically.
+
+### Option 2: Add Internet to Walled Garden
+
+Simply allow all traffic without authentication:
+
+1. Navigate to **IP** → **Hotspot** → **Walled Garden** → **IP**
+
+2. Click **Add New**:
+   - **Action:** accept
+   - **Dst. Address:** 0.0.0.0/0
 
 3. Click **OK**
 
-### Common Static Entries
-
-```
-/ip dns static add name=router.lab address=10.10.255.1 comment="Main router"
-/ip dns static add name=nas.lab address=10.10.255.10 comment="NAS"
-/ip dns static add name=speedtest.lab address=172.17.0.2 comment="OpenSpeedTest container"
-/ip dns static add name=files.lab address=172.17.0.4 comment="nginx content server"
-```
-
-### Test the Entry
-
-4. From a client on your network, ping the hostname:
-   ```
-   ping server.lab
-   ```
-
-5. The name should resolve to the IP you configured
-
-> **Tip:** Use a consistent naming scheme. `.lab`, `.home`, or `.local` are common choices. Avoid `.local` if you have Apple devices — mDNS conflicts can occur.
-
----
-
-## Lab 27.3 — Configure Upstream DNS Servers
-
-Replace your ISP's DNS with something faster, more private, or more reliable.
-
-### Popular Public DNS Options
-
-| Provider | Primary | Secondary | Notes |
-|----------|---------|-----------|-------|
-| Cloudflare | 1.1.1.1 | 1.0.0.1 | Fast, privacy-focused |
-| Google | 8.8.8.8 | 8.8.4.4 | Reliable, logs queries |
-| Quad9 | 9.9.9.9 | 149.112.112.112 | Security-focused, blocks malware |
-| OpenDNS | 208.67.222.222 | 208.67.220.220 | Filtering options available |
-
-### Set Static DNS Servers
-
-1. Navigate to **IP** → **DNS**
-
-2. In **Servers**, enter your preferred DNS:
-   ```
-   1.1.1.1,1.0.0.1
-   ```
-
-3. Click **Apply**
-
-### Remove Dynamic DNS (ISP servers)
-
-If your WAN uses DHCP, the router learns DNS from your ISP. To use only your configured servers:
-
-4. Navigate to **IP** → **DHCP Client**
-
-5. Double-click your WAN DHCP client
-
-6. Uncheck **Use Peer DNS**
-
-7. Click **OK**
-
-8. Return to **IP** → **DNS** and verify Dynamic Servers is now empty
-
----
-
-## Lab 27.4 — DNS-over-HTTPS (DoH)
-
-Standard DNS queries are unencrypted — your ISP can see every domain you look up. DNS-over-HTTPS encrypts queries to the upstream server.
-
-### Import the Certificate
-
-DoH requires trusting the upstream server's certificate. Cloudflare example:
-
-1. Download the Cloudflare root certificate:
-   - Visit https://developers.cloudflare.com/1.1.1.1/encryption/
-   - Download the DigiCert Global Root CA certificate
-
-2. Navigate to **Files** in WinBox
-
-3. Upload the certificate file
-
-4. Navigate to **System** → **Certificates**
-
-5. Click **Import**
-
-6. Select the uploaded certificate file
-
-7. Click **Import** again
-
-### Configure DoH
-
-8. Navigate to **IP** → **DNS**
-
-9. In **DoH Server**, enter:
-   ```
-   https://cloudflare-dns.com/dns-query
-   ```
-
-10. Check **Verify DoH Certificate**
-
-11. Click **Apply**
-
-### How DoH Works with Standard DNS
-
-- RouterOS tries DoH first
-- If DoH fails, it falls back to standard DNS servers
-- Keep standard servers configured as backup
-
-### Verify DoH is Working
-
-12. Navigate to https://1.1.1.1/help in a browser on a client device
-
-13. It should show "Using DNS over HTTPS (DoH): Yes"
-
-> **Note:** Some DoH providers have known issues with MikroTik. Cloudflare is well-tested. Quad9 may show errors in logs but still functions.
-
----
-
-## Lab 27.5 — Force All DNS Through MikroTik
-
-Some devices (smart TVs, IoT devices, even Chrome) ignore your DHCP-provided DNS and use hardcoded servers like 8.8.8.8. This bypasses your DNS configuration.
-
-### The Problem
-
-- You configure DNS filtering or DoH
-- Smart TV ignores it and queries Google directly
-- Your filtering is bypassed
-
-### The Solution: Redirect Port 53
-
-Force all DNS traffic through your router, regardless of what the client requests:
-
-```
-/ip firewall nat add chain=dstnat protocol=udp dst-port=53 action=redirect to-ports=53 comment="Force DNS to router"
-/ip firewall nat add chain=dstnat protocol=tcp dst-port=53 action=redirect to-ports=53 comment="Force DNS to router (TCP)"
-```
-
-### Via WinBox
-
-1. Navigate to **IP** → **Firewall** → **NAT**
-
-2. Click **Add New**
-
-3. On the **General** tab:
-   - **Chain:** dstnat
-   - **Protocol:** udp
-   - **Dst. Port:** 53
-
-4. On the **Action** tab:
-   - **Action:** redirect
-   - **To Ports:** 53
-
-5. Add a **Comment:** "Force DNS to router"
-
-6. Click **OK**
-
-7. Repeat for TCP (some DNS uses TCP)
-
-### Exclude Specific Devices (Optional)
-
-If you have a device that legitimately needs to use its own DNS (like a Pi-hole):
-
-```
-/ip firewall nat add chain=dstnat protocol=udp dst-port=53 src-address=10.10.255.100 action=accept comment="Allow Pi-hole direct DNS"
-```
-
-Place this rule **before** the redirect rules.
-
----
-
-## Lab 27.6 — DNS Adblock (RouterOS 7.15+)
-
-RouterOS 7.15 introduced native DNS adblock lists. This blocks ads and trackers at the DNS level without external software.
-
-### ⚠️ Here Be Dragons
-
-Before enabling DNS adblock, understand the tradeoffs:
-
-**Pros:**
-- Network-wide ad blocking
-- No additional hardware/containers needed
-- Works on all devices automatically
-
-**Cons:**
-- Some websites break when ad domains are blocked
-- Requires ongoing blocklist maintenance
-- Troubleshooting "why won't this site work?" becomes harder
-- Aggressive lists can block legitimate services
-
-**If you've tried Pi-hole or similar and found it frustrating, this will be similar.**
-
-### Basic Setup (If You Want to Try It)
-
-1. Navigate to **IP** → **DNS**
-
-2. Increase **Cache Size** to at least 16384 (more if you have RAM)
-
-3. Click **Apply**
-
-4. Navigate to **IP** → **DNS** → **Adlist**
-
-5. Click **Add New**:
-   - **URL:** `https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts`
-   - **SSL Verify:** yes
-
-6. Click **OK**
-
-7. The list downloads and populates the DNS cache with blocked entries
-
-### If Things Break
-
-Websites not loading? Forms not submitting? Videos not playing?
-
-1. Navigate to **IP** → **DNS** → **Adlist**
-
-2. Disable the adlist (uncheck **Enabled**)
-
-3. Flush the DNS cache:
-   ```
-   /ip dns cache flush
-   ```
-
-4. Test again
-
-### Alternative: Use a Filtering DNS Provider
-
-For simpler ad blocking without managing lists yourself, point your upstream DNS to a filtering provider:
-
-| Provider | DNS Servers | What It Blocks |
-|----------|-------------|----------------|
-| Quad9 | 9.9.9.9 | Malware, phishing |
-| CleanBrowsing | 185.228.168.9 | Adult content + security |
-| AdGuard DNS | 94.140.14.14 | Ads + trackers |
-| NextDNS | Custom | Configurable (account required) |
-
-This is "set and forget" with no blocklist management.
+> **Warning:** This bypasses all hotspot authentication. Only use if you just want the redirect experience without restricting access.
 
 ---
 
 ## Lab 27 Summary
 
-| Feature | Purpose |
-|---------|---------|
-| Static DNS | Local hostname resolution |
-| Upstream servers | Replace ISP DNS |
-| DNS-over-HTTPS | Encrypted DNS queries |
-| Force DNS redirect | Prevent DNS bypass |
-| DNS Adblock | Block ads/trackers (advanced) |
+| Component | Purpose |
+|-----------|---------|
+| Hotspot Server | Intercepts traffic, redirects to login page |
+| Walled Garden | Defines allowed destinations before login |
+| login.html | Custom redirect page |
+| Server Profile | Authentication settings |
 
-**Recommendation for most users:** Configure static entries for your local devices, use Cloudflare or Quad9 as upstream, enable DoH, and force DNS through the router. Skip the adblock lists unless you're prepared to troubleshoot.
-
----
-
-# Lab Notes — Lab 27
-
-| Item | Value |
-|------|-------|
-| Upstream DNS Servers | |
-| DoH Server URL | |
-| Local Domain Suffix | .lab / .home / other: |
-
-**Static DNS Entries:**
-
-| Hostname | IP Address |
-|----------|------------|
-| | |
-| | |
-| | |
-| | |
+**Key insight:** The walled garden does the heavy lifting. Once your destinations are whitelisted, clients can access them freely. The login page just provides the redirect trigger.
 
 ---
-
-*Document Version: Draft 1.0*
-*Last Updated: March 2026*

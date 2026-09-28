@@ -16,19 +16,19 @@ Binary backups capture everything: configuration, certificates, user database, f
 
 1. Navigate to **Files** in the left menu
 
-2. Under **Actions** on the right, click **Configuration**, then click **Backup**
+2. Under **Actions** on the right, click **Backup**
 
 3. Configure:
    - **Name:** `pre-bridge-config` (descriptive names help when you have multiple backups)
    - **Encryption:** Don't Encrypt (for lab use; production backups should use encryption)
 
-4. Click **Backup**
+4. Click **Backup Config**
 
 5. The backup file appears in the file list with a `.backup` extension.
 
 ### Download to Laptop
 
-6. Click on the backup file to select it, then click **Download**
+6. Click on the backup file to select it, then under **Actions** on the right, click **Download**
 
 7. Save it to a known location on your laptop
 
@@ -36,7 +36,7 @@ Binary backups capture everything: configuration, certificates, user database, f
 
 8. Drag and drop the backup file into the `usb1` folder in the Files list
 
-9. Alternatively, download the backup to your computer (step 6-7), then upload it to the `usb1` folder using the Upload button
+9. Alternatively, download the backup to your computer (step 6-7), then upload it to the `usb1` folder using the **Upload** button
 
 You now have backups in two locations.
 
@@ -52,7 +52,7 @@ If you need to restore:
 
 2. Click on the backup filename
 
-3. Click **Restore**
+3. Click **Restore** under the right-hand **Action** menu
 
 4. Confirm the correct file is selected
 
@@ -72,6 +72,14 @@ RSC (RouterOS Script) exports are human-readable text files containing CLI comma
 - Version control (track changes in Git)
 - Applying configuration to new devices
 - Understanding what you've actually changed
+
+### RSC vs Backup Files
+
+A **backup file** (Lab 6.1) is a binary snapshot — it captures everything including passwords, certificates, and MAC addresses. It can only be restored to the same device and you can't read or edit it. Think of it as a full disk image.
+
+An **RSC file** is a plain text script of CLI commands. You can read it, edit it, paste it into a different device, and track changes in Git. It doesn't include passwords, certificates, or device-specific data like MAC addresses. Think of it as a recipe — it tells a new device what to build, not what to clone.
+
+Use backups for disaster recovery on the same device. Use RSC exports for documentation, version control, and deploying to new hardware.
 
 ### Full Export vs Compact Export
 
@@ -106,88 +114,20 @@ You'll see the CLI commands that would recreate your current configuration. This
 
 ## Lab 6.4 — When to Use Which
 
+You now have two ways to save your configuration. Here's when to use each:
+
 | Situation | Use |
 |-----------|-----|
-| Quick recovery to known state | Binary backup (Lab 6.2) |
-| Track changes over time | RSC compact export + Git |
+| Quick recovery to known state | Binary backup (Lab 6.1) |
+| Track changes over time | RSC compact export — save dated copies |
 | Apply config to new device | RSC export + import on fresh device |
-| Complete disaster recovery | See Appendix B |
+| Share config with someone else | RSC export (no passwords included) |
+| Complete disaster recovery | Binary backup + See Appendix B |
+
+> **Visual difference:** In the Files window, RSC exports show as type **script** and are typically small (under 10 KiB for a lab config). Binary backups show as type **backup** and are significantly larger because they include all device-specific data. You can see both side by side in your Files list.
+>
+> <img width="553" height="421" alt="image" src="https://github.com/user-attachments/assets/6952d7a3-a4c3-4090-9fc7-a6ffb2cbd0bb" />
 
 ---
 
-# Lab Notes Template
-
-Print this page or copy to a document for recording important values.
-
----
-
-**Lab 1 — Initial Configuration**
-
-| Item | Value |
-|------|-------|
-| Router Identity | |
-| Admin Password | |
-| WAN IP Address | |
-| Firmware Version | |
-
----
-
-**Lab 2 — Storage and Packages**
-
-| Item | Value |
-|------|-------|
-| Architecture | |
-| RouterOS Version | |
-| USB Drive Size | |
-| Packages Installed | |
-
----
-
-**Lab 3 — Management**
-
-| Item | Value |
-|------|-------|
-| Device Mode | |
-| RoMON Secret | |
-
----
-
-**Lab 4 — WAN Access**
-
-| Item | Value |
-|------|-------|
-| Management Network | |
-| CA Certificate Name | |
-| Web Certificate Name | |
-
----
-
-**Lab 5 — Containers**
-
-| Container | IP Address | Port | Status |
-|-----------|------------|------|--------|
-| OpenSpeedTest | 172.17.0.2 | 3000 | |
-| iperf3 | 172.17.0.3 | 5201 | |
-| nginx | 172.17.0.4 | 80 | |
-
-| Resource Check | Free Memory |
-|----------------|-------------|
-| Before containers | |
-| After OpenSpeedTest | |
-| After iperf3 | |
-| After nginx | |
-
----
-
-**Backup Log**
-
-| Date | Filename | Location | Notes |
-|------|----------|----------|-------|
-| | | | |
-| | | | |
-| | | | |
-
----
-
-*Document Version: Draft 3.0*
-*Last Updated: March 2026*
+Once you have the backups and RSC scripts saved to a safe place, you can proceed to Lab 07

@@ -2,6 +2,8 @@
 
 *Prerequisites: Lab 1, Lab 2 (container package installed, USB formatted), Lab 3 (device mode set to advanced)*
 
+> **WinBox Tip:** As you work through the labs, you'll open multiple windows (Interfaces, Bridge, IP, etc.). WinBox keeps these open in the background even when you navigate elsewhere. Click the window icon in the top bar (next to Workspace) to see all open windows and switch between them, instead of reopening from the left-hand menu each time.<img width="309" height="36" alt="image" src="https://github.com/user-attachments/assets/6f3fad6e-441b-49bb-a326-3f1d8f1e59e7" />
+
 Containers allow you to run services directly on the MikroTik router. This lab builds several useful containers: a speedtest server, iperf3 server, and nginx content server.
 
 > **⚠️ HARDWARE COMPATIBILITY WARNING:** Not all MikroTik routers can run standard container images.
@@ -88,6 +90,7 @@ All containers share a common network infrastructure. We'll create this once, th
 | OpenSpeedTest | 172.17.0.2 | veth2 |
 | iperf3 | 172.17.0.3 | veth3 |
 | nginx | 172.17.0.4 | veth4 |
+| Pi-hole (optional) | 172.17.0.5 | veth-pihole (Lab 5.9) |
 
 > **Pattern:** The veth interface number matches the last octet of the IP address. Easy to remember, easy to extend.
 
@@ -104,10 +107,17 @@ All containers share a common network infrastructure. We'll create this once, th
    ```
    /ip/address/add address=172.17.0.254/24 interface=dockers comment="Container gateway"
    ```
+### Add Container Network to LAN Interface List
+
+3. The container network needs to be in the LAN interface list so containers can reach the router's DNS server and other services.
+
+```
+/interface/list/member/add list=LAN interface=dockers comment="Container network"
+```
 
 ### Configure Container Registry
 
-3. Tell RouterOS where to pull container images from:
+4. Tell RouterOS where to pull container images from:
 
    ```
    /container/config/set registry-url=https://registry-1.docker.io tmpdir=/usb1/pull
@@ -143,25 +153,18 @@ OpenSpeedTest provides an HTML5-based speed test accessible from any browser. No
 
 ### Create Mount Point
 
-First, create the directory structure that nginx expects:
+First, create the mount:
 
 ```
-/file/add name=usb1/speedtest/nginx type=directory
+/container/mounts/add list=speedtest_mount src=/usb1/speedtest-logs dst=/var/log comment="OpenSpeedTest logs"
 ```
-
-Then create the mount:
-
-```
-/container/mounts/add list=speedtest_mount src=/usb1/speedtest dst=/var/log comment="OpenSpeedTest logs"
-```
-
-> **Why the subdirectory?** nginx expects `/var/log/nginx/` to exist for its error logs. Since we're mounting `/usb1/speedtest` to `/var/log`, we need the `nginx` subdirectory to exist on the USB side.
 
 ### Deploy Container
 
 ```
 /container/add remote-image=openspeedtest/latest interface=veth2 root-dir=/usb1/speedtest mountlists=speedtest_mount envlists=speedtest_envs dns=172.17.0.254 start-on-boot=yes comment="OpenSpeedTest"
 ```
+> **Prerequisite:** The container uses the MikroTik as its DNS server (172.17.0.254). This works because the default configuration has DNS remote requests enabled. You can verify with `/ip/dns/print` — look for `allow-remote-requests: yes`.
 
 ### Start the Container
 
@@ -241,6 +244,7 @@ iperf3 provides detailed network performance testing. Unlike speedtest which run
    ```
    iperf3 -c 172.17.0.3
    ```
+> **Understanding your results:** Container-based iperf3 results reflect your router's CPU capacity, not your network speed. On an L009, expect ~500 Mbps with CPU usage around 85-90%. Every packet crosses from the physical interface through the router to the container bridge, and the container's network stack adds overhead. High retransmit counts (hundreds or more) are normal — that's the CPU falling behind momentarily and triggering TCP retransmissions. For higher throughput testing, consider the RB5009 or CCR2004, which have significantly more processing power for container workloads.
 
 ### Check Resource Usage
 
@@ -271,20 +275,26 @@ nginx runs as a non-root user by default and cannot read files on USB-mounted pa
 
 2. Click on **usb1** to open it.
 
-3. Create the nginx directories using CLI:
+3. Click **New** in the upper left corner
+    - Select **Directory**,
+    - Name: `nginx-conf`
+    - Directory: Click the drop-down, and then select **usb1**
+    - Click **Select**
+    - Click **Apply** & **OK**
+    - Repeat for `nginx-content`
+
+4. Alternately, you can create the nginx directories using CLI:
 
    ```
    /file/add name=usb1/nginx-conf type=directory
    /file/add name=usb1/nginx-content type=directory
    ```
 
-   Alternatively, in WinBox Files, right-click in the file list and select **Add Directory**, then enter `usb1/nginx-conf`. Repeat for `usb1/nginx-content`.
-
 ### Create nginx.conf
 
-4. On your computer, open a text editor (Notepad, VS Code, TextEdit, etc.).
+5. On your computer, open a text editor (Notepad, VS Code, TextEdit, etc.).
 
-5. Copy and paste the following configuration:
+6. Copy and paste the following configuration:
 
 ```nginx
 user root;
@@ -314,21 +324,23 @@ http {
 }
 ```
 
-6. Save the file as `nginx.conf` (make sure your editor doesn't add `.txt` to the filename).
+> **Important:** Do not use macOS TextEdit for creating configuration or HTML files. TextEdit adds invisible formatting even in plain text mode. Use [BBEdit](https://www.barebones.com/products/bbedit/) (free mode), [VS Code](https://code.visualstudio.com/), or type `nano filename` in Terminal instead.
 
-7. In WinBox Files, click **Upload** under Actions.
+7. Save the file as `nginx.conf` (make sure your editor doesn't add `.txt` to the filename).
 
-8. Select your `nginx.conf` file. It will upload to the root of the file system, not the folder you're viewing.
+8. In WinBox Files, click **Upload** under Actions.
 
-9. Drag the `nginx.conf` file from the root into the `usb1/nginx-conf/` folder.
+9. Select your `nginx.conf` file. It will upload to the root of the file system, not the folder you're viewing.
+
+10. Drag the `nginx.conf` file from the root into the `usb1/nginx-conf/` folder.
 
 > **Why no `include mime.types`?** MikroTik container mounts are directory-to-directory. When we mount our config directory over `/etc/nginx`, it replaces everything — including the default mime.types file. We define MIME types inline instead.
 
 ### Create Sample Content
 
-10. On your computer, create a new file in your text editor.
+11. On your computer, create a new file in your text editor.
 
-11. Copy and paste the following HTML:
+12. Copy and paste the following HTML:
 
 ```html
 <!DOCTYPE html>
@@ -351,15 +363,15 @@ http {
 </html>
 ```
 
-12. Save the file as `index.html`.
+13. Save the file as `index.html`.
 
-13. In WinBox Files, click **Upload** and select your `index.html` file.
+14. In WinBox Files, click **Upload** and select your `index.html` file.
 
-14. Drag the `index.html` file from the root into the `usb1/nginx-content/` folder.
+15. Drag the `index.html` file from the root into the `usb1/nginx-content/` folder.
 
 ### Create Infrastructure
 
-15. Open a Terminal and run:
+16. Open a Terminal and run:
 
 ```
 /interface/veth/add name=veth4 address=172.17.0.4/24 gateway=172.17.0.254 comment="nginx"
@@ -381,21 +393,21 @@ http {
 
 ### Start and Test
 
-16. Navigate to **Containers** in the left menu.
+17. Navigate to **Containers** in the left menu.
 
-17. Wait for the nginx container to finish downloading and extracting (watch the Log tab or check with `/container print`).
+18. Wait for the nginx container to finish downloading and extracting (watch the Log tab or check with `/container print`).
 
-18. Select the nginx container and click **Start** under Actions, or via CLI:
+19. Select the nginx container and click **Start** under Actions, or via CLI:
 
     ```
     /container/start nginx
     ```
 
-19. Verify it's running (flag shows **R**).
+20. Verify it's running (flag shows **R**).
 
-20. Open a browser and navigate to: **http://172.17.0.4**
+21. Open a browser and navigate to: **http://172.17.0.4**
 
-21. You should see your sample page.
+22. You should see your sample page.
 
 > **Troubleshooting:** If you get a 403 Forbidden error, verify the `nginx.conf` file is in `usb1/nginx-conf/` and contains `user root;` on the first line.
 
@@ -407,25 +419,127 @@ http {
 
 Three containers running — note the memory usage pattern.
 
-> **Memory Reference:** On an L009 with 512 MiB RAM, running OpenSpeedTest, iperf3, and nginx together consumes approximately 70 MiB. This leaves plenty of headroom for routing duties, but keep container count in mind on devices with less RAM.
+> **Memory Reference:** On an L009 with 512 MiB RAM, running OpenSpeedTest, iperf3, and nginx together consumes approximately 5.5 MiB of container memory. Total system usage including RouterOS is approximately 157 MiB, leaving over 355 MiB free. Memory is not the limiting factor for containers on this device — CPU is.
 
 ---
 
-## Containers That Don't Work on ARM MikroTik
+## Lab 5.9 — Pi-hole DNS Ad Blocker (Optional)
 
-As of March 2026 testing on RouterOS 7.22 with ARM devices (L009, RB5009), the following popular containers **do not work**:
+*Prerequisites: Lab 5.1 (Container infrastructure), container network in LAN interface list*
 
-**Pi-hole** — Downloads and extracts successfully, but fails during startup with "Permission denied" errors. Pi-hole's startup scripts (`pihole-FTL-prestart.sh`, `start.sh`) attempt to run system commands (`find`, `chown`, `install`, `grep`, `stat`, `timeout`, `capsh`) that MikroTik's container implementation restricts. The gravity database downloads successfully, but FTL cannot start.
+Pi-hole is a network-wide DNS ad blocker with a web dashboard. This is an optional lab — RouterOS has a built-in AdList feature (Lab 28) that does the same job without a container. Pi-hole gives you a richer management interface and detailed query logging.
 
-**freeRADIUS** — The official `freeradius/freeradius-server` image is amd64-only. ARM devices will see `architecture mismatch os:linux architecture:amd64` when attempting to download. For RADIUS authentication on MikroTik, use the built-in User Manager feature instead.
+> **Note:** Pi-hole requires DNS access from the container network. Verify the container bridge is in the LAN interface list (Lab 5.1, step 3). If not:
+> ```
+> /interface/list/member/add list=LAN interface=dockers comment="Container network"
+> ```
 
-**Alternatives:**
-- For DNS-based ad blocking, consider AdGuard Home — full deployment instructions are scheduled for a future release of this guide
+### Create Virtual Interface
+```
+/interface/veth/add name=veth-pihole address=172.17.0.5/24 gateway=172.17.0.254 comment="Pi-hole"
+```
+### Add to Container Bridge
+
+```
+/interface/bridge/port/add bridge=dockers interface=veth-pihole comment="Pi-hole"
+```
+
+### Deploy Container
+```
+/container/add remote-image=pihole/pihole:latest interface=veth-pihole root-dir=/usb1/pihole dns=172.17.0.254 start-on-boot=no comment="Pi-hole"
+```
+
+> **Note:** `start-on-boot=no` is intentional. Pi-hole uses significant resources during gravity updates. Only enable auto-start once you've verified it works.
+
+### Start and Monitor
+
+1. Wait for the image to download and extract. On USB 2.0 this may take 5-10 minutes.
+
+2. Start the container:
+```
+/container/start [find comment="Pi-hole"]
+```
+
+3. Monitor the status:
+```
+/container/print
+```
+
+4. Pi-hole goes through three stages:
+   - **S** (Stopped) — extracting or waiting to start
+   - **C** (Starting with healthcheck) — gravity is downloading blocklists
+   - **H** (Healthy) — ready to use
+
+   The healthcheck stage can take several minutes as Pi-hole downloads and processes blocklists.
+
+### Set Admin Password
+
+5. Once the status shows **H** (Healthy), get a shell:
+```
+/container/shell [find comment="Pi-hole"]
+```
+
+6. Set the web interface password:
+```
+pihole setpassword
+```
+
+7. Enter and confirm your password, then type `exit` to leave the shell.
+
+### Access the Dashboard
+
+8. Open a browser and navigate to `http://172.17.0.5/admin`
+
+9. Log in with the password you just set.
+
+10. The dashboard shows:
+    - **Total Queries** — DNS queries processed
+    - **Queries Blocked** — ads and trackers caught
+    - **Domains on Lists** — should show ~78,000+ from the default blocklist
+
+### Using Pi-hole as Your DNS Server
+
+To route DNS queries through Pi-hole for ad blocking, point your DHCP server's DNS setting at the Pi-hole container IP:
+```
+/ip/dhcp-server/network/set [find comment="VLAN 20"] dns-server=172.17.0.5
+```
+
+> **Caution:** If the Pi-hole container stops, DNS resolution stops for any network pointing at it. Keep the router's DNS available as a fallback, or only point test VLANs at Pi-hole until you're confident in the setup.
+
+### Cleanup (if removing)
+
+If you want to remove Pi-hole:
+
+```
+/container/stop [find comment="Pi-hole"]
+/container/remove [find comment="Pi-hole"]
+/interface/bridge/port/remove [find interface=veth-pihole]
+/interface/veth/remove veth-pihole
+```
+
+---
+
+## Container Compatibility Notes
+
+### Containers Tested and Working (RouterOS 7.24.4, L009)
+
+| Container | Image | Status |
+|-----------|-------|--------|
+| OpenSpeedTest | openspeedtest/latest | ✅ Working (Lab 5.2) |
+| iperf3 | taoyou/iperf3-alpine | ✅ Working (Lab 5.3) |
+| nginx | library/nginx:latest | ✅ Working (Lab 5.4) |
+| Pi-hole | pihole/pihole:latest | ✅ Working (Lab 5.9) |
+
+### Containers That Don't Work
+
+**freeRADIUS** — The official `freeradius/freeradius-server` image failed on ARM 32-bit devices (L009) with an architecture mismatch. It may work on ARM 64-bit devices (RB5009, CCR2004) but has not been tested. For RADIUS authentication on MikroTik, use the built-in User Manager feature instead (covered in Lab 12).
+
+**hEX S refresh (2025)** — Despite being an ARM 32-bit device with container support enabled, the hEX S refresh (EN7562CT CPU) fails to run most container images — including ARM32-native builds like `arm32v7/nginx:alpine`. Containers download and extract successfully but crash immediately with "Illegal instruction" (signal 4). The CPU does not support all ARMv7 instructions that standard container binaries expect. If you need containers, use the L009 or RB5009 instead.
+
+### Alternatives
+
+- For DNS-based ad blocking without containers, RouterOS 7.15+ includes a built-in **AdList** feature. It works on all MikroTik hardware including older MIPSBE devices. See Lab 28 for configuration details.
 - For RADIUS, use RouterOS User Manager (covered in Lab 12)
-
-> **Native Alternative:** RouterOS 7.15+ includes a built-in **AdList** feature for DNS-based ad blocking — no containers required. It works on all MikroTik hardware including older MIPSBE devices. See the DNS lab later in this guide for configuration details.
-
----
 
 ## Container Troubleshooting
 
@@ -443,7 +557,7 @@ When viewing containers with `/container print`, the flag column shows container
 | C | Starting with Healthcheck |
 | U | Unhealthy |
 
-> **Note:** Containers are referenced by name, not index number. The name is derived from the image (e.g., `SpeedTest`, `iperf3-alpine`, `nginx:latest`). Use `/container/remove nginx` not `/container/remove 2`.
+> **Referencing containers:** Throughout this guide, we use the `[find comment="..."]` syntax to target containers — for example, `/container/stop [find comment="Pi-hole"]`. This works reliably because the comment is something you set explicitly when creating the container. Index numbers (`/container/stop 0`) work for quick one-offs but change when containers are added or removed. Container names are derived from the image and can be unpredictable — OpenSpeedTest shows up as `latest`, not `openspeedtest`.
 
 ### Container Won't Start After Reboot
 
@@ -453,7 +567,7 @@ Containers with `start-on-boot=yes` may fail if the USB drive isn't mounted yet 
 
 ```
 /disk print
-/container start nginx
+/container/start [find comment="nginx content server"]
 ```
 
 ### 403 Forbidden on nginx
@@ -473,13 +587,15 @@ Check the container log:
 Enable container logging if not already enabled:
 
 ```
-/container set 0 logging=yes
+/container/set [find comment="OpenSpeedTest"] logging=yes
 ```
 
 ### "Illegal instruction" or "Signal 4" Error
 
 This indicates a CPU architecture mismatch. The container image was built for a different architecture than your router supports.
 
-**Solution:** Verify your architecture supports the container image. Devices with EN7562CT CPU (hEX S Refresh) only support arm32v5 images, which most popular containers don't provide. Use an L009, RB5009, or hAP ax² instead.
+**Solution:** This typically affects the hEX S refresh (EN7562CT CPU), which does not support all ARMv7 instructions that standard container binaries expect. There is no known workaround. Use an L009, RB5009, or hAP ax2 instead for container workloads.
 
 ---
+
+Once you make it to this point, you can advance to Lab 06.

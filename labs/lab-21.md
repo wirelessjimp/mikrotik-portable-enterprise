@@ -1,217 +1,185 @@
-# Lab 21 — Useful Tools
+# Lab 21 — Traffic Analysis & Troubleshooting
 
 *Prerequisites: Lab 1 (Initial Configuration)*
 
-MikroTik includes several built-in tools that are useful for network management and troubleshooting.
+When troubleshooting network issues, you need to see what's actually happening on the wire. MikroTik provides two tools for this: Packet Sniffer for full packet captures, and Torch for real-time traffic monitoring.
 
 ---
 
-## Lab 21.1 — TFTP Server
+## Lab 21.1 — Packet Sniffer (Wireshark Capture)
 
-When configuring network gear, you often need a TFTP server for firmware transfers. MikroTik has one built in.
+The MikroTik Packet Sniffer captures traffic on any interface and saves it in PCAP format for analysis in Wireshark.
 
-### Verify USB Storage
+### Basic Capture to File
 
-If you completed Lab 5 (Containers), your USB drive is already formatted and mounted.
+1. In WinBox, navigate to **Tools** → **Packet Sniffer**
 
-1. Navigate to **Files**
+2. On the **General** tab:
+   - **File Name:** Click the **+** and enter a name with the `.pcapng` extension (e.g., `capture1.pcapng`)
+   - **File Limit:** Set a size limit (e.g., `1000` kb)
+   - Leave Memory Limit and other settings at defaults
 
-2. Verify the **usb1** folder exists
+3. Click the **Filter** tab to narrow what's captured:
+   - **Interfaces:** Click **+** and select the interface to capture on (e.g., `ether1`, `vlan20`, `bridge`)
+   - **IP Address:** Click **+** to filter by a specific IP
+   - **Port:** Click **+** to filter by port number
+   - **Direction:** Select `rx`, `tx`, or leave as `any`
 
-3. If not, format your USB drive:
-   - Insert a USB flash drive into your MikroTik's USB port
-   - Navigate to **System** → **Disks**
-   - Select the USB drive
-   - Click **Format Drive**
-   - Choose **ext4** format
-   - Wait for formatting to complete
+   > **Tip:** Leave all filters empty to capture everything. Add filters when you know what you're looking for and want to reduce noise.
 
-### Upload Files to USB
+4. Click **Apply**
 
-4. Navigate to **Files**
+5. Click **Start** under Actions on the right
 
-5. Find the **usb1** folder
+6. Generate some traffic (ping, browse, etc.)
 
-6. Drag and drop files from your computer into the usb1 folder (or use the Upload button)
+7. Click **Stop** to end the capture
 
-### Configure TFTP Server
+### View Captured Packets
 
-7. Navigate to **IP** → **TFTP**
+8. Click the **Packets** button on the right-hand side to view captured packets in the MikroTik interface
 
-8. Click **Add New**:
-    - **Enabled:** ✓ Checked
-    - **IP Addresses:** Leave blank (allows all clients) or enter a subnet to restrict access
-    - **Req. Filename:** The filename clients will request (e.g., `firmware.bin`)
-    - **Real Filename:** The actual file path (e.g., `/usb1/actual-firmware-file.bin`)
-    - **Allow:** ✓ Checked
-    - **Read Only:** ✓ Checked (recommended for security)
+9. This view is limited — for full analysis, download the file
 
-9. Click **OK**
+### Download and Analyze in Wireshark
 
-### Test TFTP Transfer
+10. Navigate to **Files** in the left menu
 
-10. From a client device, use a TFTP client to request the file:
-    ```
-    tftp 10.10.255.1 -c get firmware.bin
-    ```
+11. Find your capture file (e.g., `capture1.pcapng`)
 
-11. The file should transfer from the MikroTik's USB storage
+12. Click and select **Download** 
 
-> **Use case:** Firmware upgrades for network devices that require TFTP (many switches, APs, and legacy devices).
+13. Open the file in Wireshark for full analysis
 
 ---
 
-## Lab 21.2 — FTP Server
+## Lab 21.2 — Live Streaming to Wireshark
 
-For more flexible file transfers, enable the FTP server.
+Instead of capturing to a file, you can stream packets directly to Wireshark in real-time. This is useful for live troubleshooting.
 
-### Enable FTP Service
+### Configure MikroTik for Streaming
 
-1. Navigate to **IP** → **Services**
+1. Navigate to **Tools** → **Packet Sniffer**
 
-2. Double-click **ftp**
+2. Click the **Filter** tab:
+   - **Interfaces:** Click **+** and select the interface to capture
 
-3. Configure:
-   - **Enabled:** ✓ Checked
-   - **Port:** 21
-   - **Available From:** Enter allowed subnets (e.g., 10.10.255.0/24) or leave blank for all
+3. Click the **Streaming** tab:
+   - **Streaming Enabled:** ✓ Checked
+   - **Server:** Enter your computer's IP address
+   - **Port:** 37008 (default)
 
-4. Click **OK**
+4. Click **Apply** (don't click Start yet)
+   
+### Configure Wireshark to Receive
 
-### Create FTP User
+4. Open Wireshark on your computer
 
-5. Navigate to **System** → **Users**
+5. In the main interface list, scroll down to find **UDP Listener remote capture**
 
-6. Click the **Groups** tab
+6. Click the gear icon next to it to configure:
+   - **Listen port:** 37008
+   - **Payload type:** tzsp
+   >**NOTE:** Payload type is case-sensitive. If you type `TZSP` instead of `tzsp` Wireshark won't decode the dump correctly.
 
-7. Click **Add New**:
-   - **Name:** ftp
-   - **Policies:** ftp, read (add write if uploads needed)
+7. Click **Start** to begin listening
 
-8. Click **OK**
+### Start the Stream
 
-9. Click the **Users** tab
+8. Return to WinBox and click **Start** on the Packet Sniffer
 
-10. Click **Add New**:
-    - **Name:** ftpuser
-    - **Group:** ftp
-    - **Password:** [Create a password]
-    - **Allowed Address:** (optional — restrict by IP)
+9. Wireshark will display packets in real-time as they cross the MikroTik interface
 
-11. Click **OK**
+10. When finished, click **Stop** in WinBox, then stop the capture in Wireshark
 
-### Connect via FTP
-
-12. From your computer, connect using any FTP client:
-    - **Host:** 10.10.255.1
-    - **Username:** ftpuser
-    - **Password:** [Your password]
-    - **Port:** 21
-
-13. You can also use a browser: `ftp://10.10.255.1` (enter credentials when prompted)
-
-> **Security note:** FTP transmits credentials in plain text. Use only on trusted networks, or restrict access via the Available From setting.
+> **Use case:** Live streaming is perfect for troubleshooting intermittent issues — you see packets as they happen without filling up storage on the router.
 
 ---
 
-## Lab 21.3 — Interface Graphing
+## Lab 21.3 — Torch (Real-Time Traffic Monitor)
 
-Monitor interface utilization over time with built-in graphing.
+Torch shows traffic flowing through an interface in real-time. Think of it as a quick "is traffic flowing?" check without capturing full packets.
 
-### Enable Interface Graphs
+### What Torch Shows
 
-1. Navigate to **Tools** → **Graphing**
+Torch displays:
+- Source and destination addresses
+- Protocol
+- Port numbers
+- Transmit and receive rates
+- VLAN IDs
 
-2. Click **Add New**:
-   - **Interface:** Select an interface (e.g., ether1 for WAN)
-   - **Allow Address:** 0.0.0.0/0 (or restrict to management subnet)
+### When to Use Torch
 
-3. Click **OK**
+- **Quick check:** Is traffic reaching this interface?
+- **Pre-firewall view:** Torch sees traffic before firewall rules apply
+- **Bandwidth monitoring:** Who's using bandwidth right now?
+- **RADIUS troubleshooting:** Is the AP actually sending RADIUS requests?
 
-4. Repeat for other interfaces you want to monitor
+### Basic Torch Usage
 
-### View Graphs
-
-5. Click the **Interface Graphs** tab
-
-6. Click on an interface to view its graph
-
-7. Available views:
-   - **Daily:** Last 24 hours
-   - **Weekly:** Last 7 days
-   - **Monthly:** Last 30 days
-   - **Yearly:** Last 365 days
-
-### Real-Time Interface Stats
-
-For real-time (not historical) stats:
-
-1. Navigate to **Interfaces**
-
-2. Double-click an interface
-
-3. Click the **Traffic** section at the bottom to expand it
-
-4. View real-time transmit/receive rates and graphs
-
----
-
-## Lab 21.4 — Bandwidth Test
-
-<!-- TODO: Test Bandwidth Test tool — verify usefulness compared to iperf3 container from Lab 5. Questions: Is bandwidth-test.mikrotik.com still active? Any gotchas with authentication or firewall rules? Does this add value beyond iperf3? -->
-
-Test throughput between MikroTik devices or to the bandwidth-test.mikrotik.com server.
-
-### Test to MikroTik's Public Server
-
-1. Navigate to **Tools** → **Bandwidth Test**
+1. Navigate to **Tools** → **Torch**
 
 2. Configure:
-   - **Test To:** bandwidth-test.mikrotik.com
-   - **Protocol:** TCP or UDP
-   - **Direction:** both (transmit and receive)
-   - **Username:** (leave blank for public server)
-   - **Password:** (leave blank for public server)
+   - **Interface:** Select the interface to monitor
+   - **Src. Address:** Filter by source IP (optional)
+   - **Dst. Address:** Filter by destination IP (optional)
+   - **Port:** Filter by port number (optional)
+   - **Protocol:** Filter by protocol (optional)
+   - **Entry Timeout:** 00:00:10 (10 seconds to allow for easier reading)
 
 3. Click **Start**
 
-4. View results showing throughput in both directions
+4. Traffic appears in real-time, showing:
+   - **Src. Address** and **Dst. Address**
+   - **Protocol** (TCP, UDP, ICMP, etc.)
+   - **Src. Port** and **Dst. Port**
+   - **Tx Rate** and **Rx Rate**
 
-### Test Between Two MikroTik Devices
+5. Click **Stop** when finished
 
-To test throughput between your main router and the mAP:
+### Example: Verify RADIUS Traffic
 
-**On the device acting as server:**
+To verify an AP is sending RADIUS requests:
 
-1. Navigate to **Tools** → **Bandwidth Server**
+1. Open Torch on **vlan255bridge** (or your management VLAN)
 
-2. Ensure **Enabled** is checked
+2. Set **Port:** 1812
 
-3. Note the authentication settings (or disable for testing)
+3. Set **Protocol:** UDP
 
-**On the device acting as client:**
+4. Click **Start**
 
-4. Navigate to **Tools** → **Bandwidth Test**
+5. Attempt a wireless authentication
 
-5. Configure:
-   - **Test To:** [Server device's IP address]
-   - **Protocol:** TCP
-   - **Direction:** both
-   - **Username/Password:** (if authentication enabled on server)
+6. You should see UDP traffic from the AP's IP to 10.10.255.1 on port 1812
 
-6. Click **Start**
+If you see the requests but authentication fails, the issue is RADIUS configuration, not connectivity.
 
-> **Use case:** Verify throughput between sites, test WireGuard tunnel performance, validate switch/cable capacity.
+### Example: Check DHCP Traffic
+
+To verify DHCP requests are reaching the router:
+
+1. Open Torch on the appropriate bridge interface
+
+2. Set **Port:** 67,68
+
+3. Set **Protocol:** UDP
+
+4. Click **Start**
+
+5. Connect a client or release/renew DHCP
+
+6. You should see DHCP discover/request packets
 
 ---
 
 ## Lab 21 Summary
 
-| Tool | Purpose |
-|------|---------|
-| TFTP Server | Firmware transfers to network devices |
-| FTP Server | General file sharing |
-| Interface Graphing | Historical bandwidth monitoring |
-| Bandwidth Test | Throughput testing between devices |
+| Tool | Use Case | Output |
+|------|----------|--------|
+| Packet Sniffer (file) | Detailed analysis, save for later | PCAP file for Wireshark |
+| Packet Sniffer (stream) | Live troubleshooting | Real-time Wireshark display |
+| Torch | Quick "is traffic flowing?" check | Real-time rates and addresses |
 
 ---

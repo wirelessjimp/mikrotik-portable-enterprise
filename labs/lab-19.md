@@ -1,288 +1,326 @@
-# Lab 19 — Enterprise AP Integration
+# Lab 19 — Enterprise Switch Integration
 
-*Prerequisites: Lab 11 (User Manager/RADIUS), Lab 18 (switch configured with AP port)*
+*Prerequisites: Lab 7 (trunk ports configured), Lab 8 (DHCP configured)*
 
-This lab connects an enterprise AP to your network, configures it to use your MikroTik as a RADIUS server, and validates WPA2/WPA3-Enterprise authentication.
+This lab connects an enterprise switch to your MikroTik via trunk, extending VLANs to additional ports. This is the infrastructure needed to connect enterprise APs that require PoE and VLAN tagging.
 
-> **Tested Configuration:** This lab was developed using a RUCKUS AP running Unleashed firmware. The RADIUS and VLAN concepts apply to any enterprise AP — adjust the AP configuration steps for your vendor's interface.
+> **Tested Configuration:** This lab was developed using a RUCKUS ICX series switch. The concepts apply to any managed switch — only the CLI syntax differs. Refer to your vendor's documentation for specific commands.
 
 ---
 
-## Lab 19.1 — Connect the AP
+## Lab 19.1 — Understanding Trunk Ports
+
+Before connecting the switch, let's clarify what we're building.
+
+### VLAN Tagging Concepts
+
+| Term | Meaning | Also Called |
+|------|---------|-------------|
+| Tagged | VLAN ID is included in the Ethernet frame | 802.1Q, trunk |
+| Untagged | No VLAN ID in the frame; switch assigns the port's native VLAN | Access, native |
+| Native VLAN | The VLAN used for untagged traffic on a trunk | PVID, default VLAN |
+
+### What a Trunk Port Does
+
+A trunk port carries multiple VLANs over a single cable:
+- **Tagged VLANs:** Frames include the VLAN ID; both ends must agree on tagging
+- **Native/Untagged VLAN:** Frames have no tag; used for management traffic
+
+### Our Trunk Design
+
+| VLAN | Purpose | Tagged/Untagged |
+|------|---------|-----------------|
+| 20 | Data | Tagged |
+| 30 | Voice | Tagged |
+| 40 | IoT | Tagged |
+| 255 | Management | Untagged (native) |
+
+The switch receives an IP address on VLAN 255 (untagged), and passes VLANs 20, 30, 40 to access ports or downstream devices (like an AP).
+
+---
+
+## Lab 19.2 — MikroTik Trunk Port Verification
+
+If you completed Lab 7.4, your expansion port is already configured as a trunk. Let's verify.
+
+### Check VLAN Interfaces
+
+1. On your main router, navigate to **Interfaces**
+
+2. Verify you have VLAN interfaces on your expansion port:
+
+   For 5-port devices (hEX, hAP), look for:
+   - ether5-vlan20 (or similar naming)
+   - ether5-vlan30
+   - ether5-vlan40
+
+   For 8-port devices (L009, RB5009), look for:
+   - ether8-vlan20
+   - ether8-vlan30
+   - ether8-vlan40
+
+3. If these don't exist, create them via **Terminal**:
+
+   ```
+   # For 8-port devices (adjust interface name for 5-port)
+   /interface/vlan/add interface=ether8 vlan-id=20 name=ether8-vlan20 comment="Trunk VLAN 20"
+   /interface/vlan/add interface=ether8 vlan-id=30 name=ether8-vlan30 comment="Trunk VLAN 30"
+   /interface/vlan/add interface=ether8 vlan-id=40 name=ether8-vlan40 comment="Trunk VLAN 40"
+   ```
+
+### Verify Bridge Port Assignment
+
+4. Navigate to **Bridge** → **Ports**
+
+5. Verify each trunk VLAN interface is added to its corresponding bridge:
+   - ether8-vlan20 → vlan20bridge
+   - ether8-vlan30 → vlan30bridge
+   - ether8-vlan40 → vlan40bridge
+
+6. Verify the physical port (ether8) is in vlan255bridge for native/untagged traffic.
+
+### What This Looks Like
+
+When properly configured, traffic flows like this:
+
+```
+Switch                        MikroTik
+──────                        ────────
+VLAN 20 tagged    ────────►   ether8 → VLAN interface → vlan20bridge
+VLAN 30 tagged    ────────►   ether8 → VLAN interface → vlan30bridge  
+VLAN 40 tagged    ────────►   ether8 → VLAN interface → vlan40bridge
+VLAN 255 untagged ────────►   ether8 → directly to vlan255bridge
+```
+
+---
+
+## Lab 19.3 — Switch Configuration Concepts
+
+Every managed switch needs the same basic configuration for this lab. The CLI syntax varies by vendor, but the concepts are universal.
+
+### What You Need to Configure
+
+**1. Create VLANs**
+
+Create VLANs 20, 30, 40, and 255 on the switch. Some switches create VLAN 1 by default — we won't use it.
+
+**2. Configure the Uplink Port (to MikroTik)**
+
+The uplink port must:
+- Tag VLANs 20, 30, 40 (these frames get an 802.1Q header)
+- Leave VLAN 255 untagged/native (these frames have no header)
+
+This is sometimes called:
+- "Trunk port" with native VLAN (Cisco)
+- "Tagged/untagged" membership (HP/Aruba, Ruckus)
+- "Dual-mode" (some vendors)
+
+**3. Configure Access Ports (for testing)**
+
+Access ports connect end devices:
+- Assign each port to a single VLAN
+- Traffic leaves the port untagged
+- Traffic entering the port gets assigned to that VLAN
+
+**4. Configure AP Ports (if connecting an AP)**
+
+AP ports typically need:
+- Untagged VLAN for AP management (so the AP gets an IP)
+- Tagged VLANs for wireless clients (each SSID can use a different VLAN)
+
+**5. Configure Switch Management IP**
+
+The switch needs an IP address on VLAN 255 (the management VLAN) so you can manage it. Options:
+- DHCP: Switch requests an address from MikroTik's DHCP server
+- Static: Manually assign an IP in the 10.10.255.x range
+
+### Configuration Reference Table
+
+Use this table when configuring your switch. Translate to your vendor's syntax.
+
+| Port | VLANs Tagged | VLAN Untagged | Purpose |
+|------|--------------|---------------|---------|
+| Uplink (to MikroTik) | 20, 30, 40 | 255 | Trunk to router |
+| Access port example | — | 20 | End device on VLAN 20 |
+| Access port example | — | 255 | End device on management |
+| AP port | 20, 30 | 255 | Enterprise AP |
+
+---
+
+## Lab 19.4 — Physical Connection
+
+1. Power on your switch.
+
+2. Connect your laptop to the switch (any port) for initial configuration.
+
+3. Access the switch via:
+   - **Console cable:** Serial connection to the console port
+   - **Default IP:** Many switches have a default IP (check documentation)
+   - **DHCP:** Some switches request DHCP; check MikroTik's DHCP leases
+
+4. Log in with default credentials (check your switch's documentation).
+
+5. Perform basic setup:
+   - Set hostname/identity
+   - Set admin password
+   - Configure management IP (if not using DHCP)
+
+6. Save the configuration.
+
+---
+
+## Lab 19.5 — Connect Switch to MikroTik
 
 ### Physical Connection
 
-1. Connect your AP to the switch port configured in Lab 18.7 (or directly to your MikroTik's expansion port if not using a switch).
+1. Connect the switch's uplink port to your MikroTik's expansion port (ether5 or ether8).
 
-2. Power the AP:
-   - Via PoE from the switch
-   - Via PoE injector
-   - Via power adapter (if applicable)
+2. The switch should now:
+   - Receive a DHCP lease on VLAN 255 (if configured for DHCP)
+   - Be reachable at its management IP
 
-3. Wait for the AP to boot. Watch status LEDs — most APs indicate ready state with a solid or slowly blinking LED.
+### Verify from MikroTik
 
-### Verify AP Gets IP Address
+3. On your MikroTik, navigate to **IP** → **DHCP Server** → **Leases**
 
-4. On your MikroTik, navigate to **IP** → **DHCP Server** → **Leases**
+4. Look for a new lease on the vlan255bridge DHCP server — this is your switch.
 
-5. Look for a new lease on the vlan255bridge DHCP server — this is your AP.
+5. Record the switch's IP address:
 
-6. Record the AP's IP address:
+   > **Switch IP:** ________________________________
 
-   > **AP Management IP:** ________________________________
+### Verify from Switch
 
----
-
-## Lab 19.2 — Initial AP Configuration
-
-Access your AP's management interface to perform initial setup. Steps vary by vendor.
-
-### Access AP Web Interface
-
-1. Open a browser and navigate to **https://[AP IP Address]**
-
-2. Accept any certificate warnings (APs typically use self-signed certificates).
-
-3. Log in with default credentials (check your AP's documentation — often printed on the AP label).
-
-### Basic Configuration
-
-4. Set the AP's hostname/system name.
-
-5. Change the default admin password.
-
-6. Set the country/regulatory domain.
-
-7. Verify the AP has internet connectivity (for firmware updates if needed).
-
-8. Update firmware if a newer version is available.
-
-9. Save the configuration.
-
-> **Note:** We're not covering vendor-specific setup wizards here. Complete your AP's initial configuration per its documentation before proceeding.
-
----
-
-## Lab 19.3 — Configure RADIUS Authentication
-
-Now we point the AP to your MikroTik's User Manager for 802.1X authentication.
-
-### Information Needed
-
-| Item | Value |
-|------|-------|
-| RADIUS Server IP | 10.10.255.1 |
-| RADIUS Auth Port | 1812 |
-| RADIUS Acct Port | 1813 |
-| RADIUS Shared Secret | [From Lab 11.3] |
-
-### Add RADIUS Server on AP
-
-1. In your AP's management interface, find the RADIUS or AAA server configuration.
-   - Often under: Security, Authentication, AAA, or Services
-
-2. Add a new RADIUS server:
-   - **Name/Description:** MikroTik-RADIUS (or similar)
-   - **Type:** RADIUS (or Authentication Server)
-   - **IP Address:** 10.10.255.1
-   - **Port:** 1812
-   - **Shared Secret:** [Your RADIUS shared secret from Lab 11]
-
-3. Save the configuration.
-
-4. If your AP supports RADIUS accounting, add a second entry:
-   - **IP Address:** 10.10.255.1
-   - **Port:** 1813
-   - **Shared Secret:** [Same secret]
-
-### Test RADIUS Connectivity
-
-Many APs have a "Test" button for RADIUS servers. If available:
-
-1. Enter a test username: `user2@mikrotik.test`
-2. Enter the password from Lab 11.3
-3. Run the test
-
-If the test succeeds, RADIUS is working. If not, check:
-- Can the AP ping 10.10.255.1?
-- Is UDP 1812/1813 allowed through the firewall (Lab 11.4)?
-- Does the shared secret match exactly?
-
----
-
-## Lab 19.4 — Create WPA2-Enterprise SSID
-
-Create an SSID that uses RADIUS authentication.
-
-### SSID Configuration
-
-1. Navigate to your AP's wireless/WLAN/SSID configuration.
-
-2. Create a new SSID (or edit an existing one):
-   - **SSID Name:** Lab-Enterprise
-   - **Security Mode:** WPA2-Enterprise (or WPA2/WPA3-Enterprise)
-   - **Encryption:** AES/CCMP
-   - **Authentication Server:** MikroTik-RADIUS (the server you added)
-
-3. Configure VLAN assignment:
-   - **VLAN:** 20 (or your preferred client VLAN)
+6. From the switch CLI, verify you can ping the MikroTik gateway:
    
-   This means authenticated clients land on VLAN 20, not the management VLAN.
+   ```
+   ping 10.10.255.1
+   ```
 
-4. Save and apply the configuration.
-
-### Optional: Additional Wireless Settings
-
-Depending on your AP, consider:
-- **Band:** 5 GHz preferred, or both bands
-- **Minimum data rate:** 24 Mbps (disables low 802.11b/g rates)
-- **802.11k/v/r:** Enable if supported (improves roaming)
+7. Verify you can ping an external address (confirms routing works):
+   
+   ```
+   ping 8.8.8.8
+   ```
 
 ---
 
-## Lab 19.5 — Test EAP-PEAP Authentication
+## Lab 19.6 — Test VLAN Connectivity
 
-Test with username/password authentication.
+### Test Access Port on VLAN 20
 
-### Connect a Client
+1. Configure a switch port as an access port on VLAN 20 (untagged).
 
-1. On a test device (laptop, phone, tablet), find the **Lab-Enterprise** SSID.
+2. Connect your laptop to that port.
 
-2. Connect. When prompted for credentials:
-   - **EAP Method:** PEAP
-   - **Phase 2 Authentication:** MSCHAPv2
-   - **Identity/Username:** user2@mikrotik.test
-   - **Password:** [From Lab 11.3]
-   - **CA Certificate:** Do not validate (or install your CA cert for production)
+3. Your laptop should receive an IP in **10.10.20.0/24** from MikroTik's VLAN 20 DHCP server.
 
-3. The device should authenticate and connect.
-
-### Verify on Client Device
-
-4. Check the client's IP address — it should be in **10.10.20.0/24** (VLAN 20).
-
-5. Test connectivity:
+4. Verify:
    - Ping 10.10.20.1 (MikroTik gateway for VLAN 20) ✓
    - Ping 8.8.8.8 (internet) ✓
 
-### Verify on MikroTik
+### Test Access Port on VLAN 255
 
-6. Navigate to **User Manager** → **Sessions**
+5. Move your laptop to a switch port configured for VLAN 255 (untagged).
 
-7. You should see an active session for `user2@mikrotik.test`.
+6. Your laptop should receive an IP in **10.10.255.0/24**.
 
-8. Navigate to **IP** → **DHCP Server** → **Leases**
+7. Verify:
+   - Ping 10.10.255.1 (MikroTik gateway) ✓
+   - Ping the switch at its management IP ✓
 
-9. Find your client — verify it shows the vlan20bridge DHCP server.
+### Test Cross-VLAN Isolation
 
----
+8. With your laptop on VLAN 20, try to ping a device on VLAN 255.
 
-## Lab 19.6 — Test EAP-TLS Authentication (Optional)
+9. This should **fail** (blocked by firewall rules from Lab 10).
 
-Test with certificate-based authentication. This requires the client certificate from Lab 11.6.
-
-### Install Client Certificate
-
-1. Ensure you've exported and installed the client certificate (.p12 file) on your test device.
-
-2. The certificate must be trusted by the device.
-
-### Connect a Client
-
-3. On your test device, connect to **Lab-Enterprise**.
-
-4. When prompted:
-   - **EAP Method:** TLS
-   - **Identity/Username:** user1@mikrotik.test
-   - **Client Certificate:** [Select the installed certificate]
-   - **CA Certificate:** [Your RADIUS CA, or "Do not validate" for lab]
-
-5. The device should authenticate using the certificate (no password needed).
-
-### Verify Authentication
-
-6. Check the client IP — should be in 10.10.20.0/24.
-
-7. Check User Manager Sessions — should show `user1@mikrotik.test`.
+10. Cross-VLAN communication should only work where explicitly allowed.
 
 ---
 
-## Lab 19.7 — Verify VLAN Assignment
+## Lab 19.7 — Configure AP Port
 
-Confirm clients land on the correct VLAN based on SSID configuration.
+If you're connecting an enterprise AP in the next lab, configure a port for it now.
 
-### Check Client Placement
+### AP Port Requirements
 
-1. Connect a device to **Lab-Enterprise**.
+Most enterprise APs need:
+- **Untagged VLAN** for management: The AP gets its IP here
+- **Tagged VLANs** for wireless clients: Different SSIDs map to different VLANs
 
-2. Verify IP is in 10.10.20.0/24.
+### Configure the Port
 
-3. If you created multiple SSIDs with different VLANs:
-   - SSID on VLAN 20 → Client gets 10.10.20.x
-   - SSID on VLAN 30 → Client gets 10.10.30.x
+1. Choose a switch port for the AP.
 
-### Test Isolation
+2. Configure it with:
+   - VLAN 255 untagged (native) — AP management
+   - VLANs 20, 30 tagged — for wireless client VLANs
 
-4. Connect two devices:
-   - Device A on VLAN 20 (via Lab-Enterprise)
-   - Device B on VLAN 255 (via wired or different SSID)
+3. If the switch supports PoE:
+   - Enable PoE on this port
+   - Verify power budget is sufficient for your AP
 
-5. Try to ping Device B from Device A.
+### Record the Configuration
 
-6. This should **fail** (firewall rules from Lab 10 block cross-VLAN traffic).
+| Setting | Value |
+|---------|-------|
+| AP Port Number | |
+| Untagged VLAN | 255 |
+| Tagged VLANs | 20, 30 |
+| PoE Enabled | ☐ Yes ☐ No |
 
 ---
 
-## Lab 19.8 — Troubleshooting
+## Lab 19.8 — MikroTik Switch (SwOS) — Optional
 
-### AP Can't Reach RADIUS Server
+If you have a MikroTik CSS switch (runs SwOS, not RouterOS), the configuration method is different. SwOS uses a web interface.
 
-**Symptoms:** RADIUS test fails, clients can't authenticate
+### Access SwOS
 
-**Check:**
-1. AP has IP on VLAN 255? (Check DHCP leases)
-2. AP can ping 10.10.255.1? (Test from AP CLI if available)
-3. Firewall allows UDP 1812/1813 from AP? (Lab 11.4)
-4. Shared secret matches exactly? (Case-sensitive, no extra spaces)
+1. Connect the switch to power and to your MikroTik's expansion port.
 
-### Client Authentication Fails
+2. The switch will request DHCP. Check **IP** → **DHCP Server** → **Leases** on your MikroTik.
 
-**Symptoms:** Client prompts for credentials but never connects
+3. Access the switch web interface at its assigned IP.
 
-**Check MikroTik Log:**
-1. Navigate to **Log** in WinBox
-2. Look for User Manager entries
-3. Common messages:
-   - "user not found" — Username doesn't match User Manager
-   - "shared secret mismatch" — Secret doesn't match
-   - "certificate error" — Certificate issue (check key type)
+4. Default credentials: admin / (blank)
 
-**Use Torch to verify traffic:**
-1. Navigate to **Tools** → **Torch**
-2. Set **Src. Address:** [AP's IP]
-3. Set **Protocol:** UDP
-4. Set **Port:** 1812
-5. Start — you should see RADIUS requests from the AP
+### Configure VLANs in SwOS
 
-### Client Gets Wrong IP/VLAN
+1. Click the **VLAN** tab.
 
-**Symptoms:** Client connects but gets IP from wrong VLAN
+2. For the uplink port (typically Port 1):
+   - **VLAN Mode:** Enabled
+   - **VLAN Receive:** any
+   - **Default VLAN ID:** 255
+   - **Force VLAN ID:** Checked
+   - **VLAN Header:** add if missing
 
-**Check:**
-1. SSID is configured with correct Access VLAN on AP?
-2. Switch port tags that VLAN to the AP?
-3. MikroTik has DHCP server for that VLAN?
-4. VLAN interface exists on trunk port?
+3. For access ports:
+   - **VLAN Mode:** Enabled
+   - **VLAN Receive:** only untagged
+   - **Default VLAN ID:** [Desired VLAN]
+   - **Force VLAN ID:** Unchecked
+   - **VLAN Header:** leave as is
 
-### Client Can't Reach Internet
+4. Click **Apply All**
 
-**Symptoms:** Client authenticates, gets IP, but no internet
+### Add VLANs to SwOS
 
-**Check:**
-1. Can client ping gateway (10.10.20.1)?
-2. Can client ping 8.8.8.8?
-3. Firewall rules allow traffic from VLAN 20 to internet?
-4. NAT/masquerade rule includes VLAN 20?
+5. Click the **VLANs** tab (plural).
+
+6. Click **Append** to add each VLAN: 20, 30, 40, 255
+
+7. For each VLAN, configure port membership:
+   - Uplink port: Tagged (except 255 which is untagged)
+   - Access ports: Their assigned VLAN as untagged, empty for others
+
+8. Click **Apply All**
+
+9. Click **System** and verify **Independent VLAN Lookup** is enabled.
+
+10. Click **Apply All**
 
 ---
 
@@ -290,30 +328,13 @@ Confirm clients land on the correct VLAN based on SSID configuration.
 
 You now have:
 
-- ✅ Enterprise AP connected via switch (or direct trunk)
-- ✅ RADIUS server configured on AP pointing to MikroTik
-- ✅ WPA2/WPA3-Enterprise SSID broadcasting
-- ✅ EAP-PEAP authentication tested (username/password)
-- ✅ EAP-TLS authentication tested (certificate) — optional
-- ✅ Clients landing on correct VLANs
-- ✅ Full enterprise wireless lab environment
+- ✅ Trunk connection between MikroTik and enterprise switch
+- ✅ VLANs 20, 30, 40 tagged; VLAN 255 native/untagged
+- ✅ Switch receiving management IP on VLAN 255
+- ✅ Access ports tested for VLAN assignment
+- ✅ AP port prepared (if applicable)
 
-**What you've built:**
-
-This is a complete enterprise wireless lab:
-- MikroTik as router, DHCP server, and RADIUS server
-- Enterprise switch extending VLANs with PoE
-- Enterprise AP with WPA2/WPA3-Enterprise
-- Multiple VLANs for client segmentation
-
-You can now practice:
-- WPA2/WPA3-Enterprise authentication
-- EAP-PEAP and EAP-TLS methods
-- VLAN assignment per SSID
-- RADIUS troubleshooting
-- Enterprise AP configuration
-
-All with hardware that fits in a small bag and costs less than a single enterprise controller license.
+Your network can now support enterprise APs and other devices that require PoE and VLAN tagging.
 
 ---
 
@@ -321,25 +342,18 @@ All with hardware that fits in a small bag and costs less than a single enterpri
 
 | Item | Value |
 |------|-------|
-| AP Make/Model | |
-| AP Management IP | |
-| AP Admin Password | |
-| RADIUS Shared Secret | |
-| Enterprise SSID Name | |
-| Enterprise SSID VLAN | |
+| Switch Make/Model | |
+| Switch Management IP | |
+| Switch Uplink Port | |
+| AP Port Number | |
 
-**Authentication Test Results:**
+**VLAN Verification:**
 
 | Test | Result |
 |------|--------|
-| RADIUS connectivity test | ☐ Pass ☐ Fail |
-| EAP-PEAP authentication | ☐ Pass ☐ Fail |
-| EAP-TLS authentication | ☐ Pass ☐ Fail ☐ Skipped |
-| Client gets correct VLAN IP | ☐ Pass ☐ Fail |
+| Switch gets IP on VLAN 255 | ☐ Pass ☐ Fail |
+| Laptop gets IP on VLAN 20 access port | ☐ Pass ☐ Fail |
+| Laptop gets IP on VLAN 255 access port | ☐ Pass ☐ Fail |
 | Cross-VLAN traffic blocked | ☐ Pass ☐ Fail |
-| Client can reach internet | ☐ Pass ☐ Fail |
 
 ---
-
-*Document Version: Draft 1.0*
-*Last Updated: March 2026*

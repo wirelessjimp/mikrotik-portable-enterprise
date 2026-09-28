@@ -21,6 +21,8 @@ Before we begin, understand how port count affects what's available for VLANs:
 
 > **Important:** Do not reassign your backdoor port (ether4 on 5-port, ether7 on 8-port) to a VLAN. This port stays in the default bridge for emergency access.
 
+> **WinBox Cleanup** If you have been using WinBox, go ahead and close all of your open windows at this point to make the next labs easier to navigate.
+
 ---
 
 ## Lab 7.1 — Bridge Interfaces
@@ -49,15 +51,17 @@ We'll remove most ports from the default bridge, keeping only the backdoor port 
 
 8. Repeat for the remaining ports you want to reassign, but **keep your backdoor port in the default bridge**. This ensures you can always access the router at 192.168.88.1.
 
-   For a hEX S, remove ether2 and ether3, keeping ether4 (backdoor) and ether5 (expansion).
+   For a hEX S, remove ether2 and ether3, keeping ether4 (backdoor) and ether5 (expansion) in the default `bridge`.
 
-   For an L009, remove ether2 through ether6, keeping ether7 (backdoor) and ether8 (expansion).
+   For an L009, remove ether2 through ether6, keeping ether7 (backdoor) and ether8 (expansion) in the default `bridge`.
+
+   > For the L009 and RB5009, you can also choose to remove the `sfp' port from the default bridge for security, or leave it in the default bridge, your choice.
 
 ### Create New Bridges for VLANs
 
 9. Click the **Bridge** tab to return to the bridge list.
 
-10. Click **Add New** and configure:
+10. Click **New** and configure:
     - **Name:** `vlan20bridge`
     - **Comment:** `VLAN 20 bridge`
     - **Enabled:** Checked
@@ -89,7 +93,7 @@ We'll remove most ports from the default bridge, keeping only the backdoor port 
 
 15. Click the **Ports** tab.
 
-16. Click **Add New** and configure:
+16. Click **New** and configure:
     - **Interface:** ether2
     - **Bridge:** vlan20bridge
     - **Hardware Offload:** Unchecked
@@ -97,7 +101,7 @@ We'll remove most ports from the default bridge, keeping only the backdoor port 
 
     > **Important:** Disable hardware offload on ports in VLAN-filtered bridges. Hardware offload passes traffic through the switch chip, bypassing the CPU-based VLAN filtering. With it enabled, DHCP and other broadcast traffic may not reach the router's services.
 
-17. Click **Apply** and **OK**
+17. Click **Apply** & **OK**
 
 18. Repeat for ether3:
     - **Interface:** ether3
@@ -114,11 +118,13 @@ We'll remove most ports from the default bridge, keeping only the backdoor port 
     /interface/bridge/port/add bridge=vlan40bridge interface=ether6 hw=no comment="Ether6 VLAN40"
     ```
 
-    **For 5-port devices (hAP & hEX series):**
-    
-    You only have ether2 and ether3 available as access ports. VLAN 40 has no dedicated physical port — it will be accessible via trunk connections configured in Lab 7.4.
+> **Why all three on VLAN 40?** At this stage, we're demonstrating that multiple ports can share the same VLAN — the same way a managed switch assigns access ports to a VLAN. VLAN 255 (management) will be configured on the trunk port (ether8) in Lab 7.4. Having three ports on VLAN 40 also gives you room to plug in multiple test devices later without reconfiguring.
 
-    > **Note:** We still create the vlan40bridge and vlan255bridge interfaces. They're used for trunk ports and internal routing even without dedicated physical access ports.
+ **For 5-port devices (hAP & hEX series):** 
+    
+ You only have ether2 and ether3 available as access ports. VLAN 40 has no dedicated physical port — it will be accessible via trunk connections configured in Lab 7.4.
+
+ > **Note:** We still create the vlan40bridge and vlan255bridge interfaces. They're used for trunk ports and internal routing even without dedicated physical access ports.
 
 ---
 
@@ -132,7 +138,7 @@ The next step is creating VLAN interfaces on each bridge. These are the logical 
 
 2. You'll see the physical Ethernet interfaces, virtual Ethernet interfaces (veth), and the bridges you created.
 
-3. Click **Add New** and select **VLAN**.
+3. Click **New** and select **VLAN**.
 
 4. Configure:
    - **Name:** vlan20
@@ -173,16 +179,17 @@ The MikroTik uses interface lists for firewall rules. We need to add our new int
 
 9. Click **Add New** and configure:
    - **Enabled:** Checked
+   - **Comment:** VLAN 20
    - **List:** LAN
    - **Interface:** vlan20
-   - **Comment:** VLAN 20
 
-10. Click **Apply** and **OK**
+10. Click **Apply** & **OK**
 
 11. Repeat for vlan30 using the UI:
-    - **List:** LAN
-    - **Interface:** vlan30
-    - **Comment:** VLAN 30
+   - **Enabled:** Checked
+   - **Comment:** VLAN 30
+   - **List:** LAN
+   - **Interface:** vlan30
 
 12. Add the remaining interfaces, bridges, and physical ports using CLI:
 
@@ -219,6 +226,7 @@ To make a port act as an access port, we need:
 1. **PVID (Port VLAN ID)** — The VLAN tag assigned to untagged incoming traffic
 2. **Frame Types** — Set to only accept untagged frames
 3. **VLAN Filtering** — Enabled on the bridge to enforce VLAN membership
+4. **Bridge PVID** — Set to match the VLAN so the bridge processes frames correctly
 
 ### Configure an Access Port
 
@@ -226,37 +234,52 @@ We'll configure ether2 as an access port for VLAN 20.
 
 1. Navigate to **Bridge** → **Ports**
 
-2. Double-click on the **ether2** entry, then click the **VLAN** tab.
+2. Double-click on the **ether2** entry (Ether2 VLAN20), then click the **VLAN** tab.
 
 3. Configure:
    - **PVID:** 20
    - **Frame Types:** admit-only-untagged-and-priority-tagged
 
-4. Click **Apply** and **OK**
+4. Click **Apply** & **OK**
 
-5. Now enable VLAN filtering on the bridge. Navigate to **Bridge** → **Bridge** tab.
+### Enable VLAN Filtering on the Bridge
+
+5. Navigate to **Bridge** → **Bridge** tab.
 
 6. Double-click on **vlan20bridge** to edit it, then click the **VLAN** tab.
 
 7. Configure:
    - **VLAN Filtering:** Checked
+   - **PVID:** 20
 
-8. Click **Apply** and **OK**
+8. Click **Apply** & **OK**
 
-> **Note:** RouterOS automatically creates the VLAN table entries when you set the PVID on the port. You do not need to manually add VLAN entries in the Bridge → VLANs tab.
+> **Important:** The bridge PVID must match the VLAN ID. If left at the default of 1, the bridge won't correctly process frames tagged by the port's PVID setting, and DHCP and other services on the VLAN interface won't work.
 
 ### CLI Equivalent
 
 For the remaining access ports, use CLI:
 
-```
-# Configure ether3 as access port for VLAN 30
-/interface/bridge/port/set [find interface=ether3] pvid=30 frame-types=admit-only-untagged-and-priority-tagged
-/interface/bridge/set vlan30bridge vlan-filtering=yes
+Configure ether3 as access port for VLAN 30
 
-# Configure ether4 as access port for VLAN 40
+```
+/interface/bridge/port/set [find interface=ether3] pvid=30 frame-types=admit-only-untagged-and-priority-tagged
+/interface/bridge/set vlan30bridge vlan-filtering=yes pvid=30
+```
+
+Configure ether4-6 as access ports for VLAN 40
+
+```
 /interface/bridge/port/set [find interface=ether4] pvid=40 frame-types=admit-only-untagged-and-priority-tagged
-/interface/bridge/set vlan40bridge vlan-filtering=yes
+/interface/bridge/port/set [find interface=ether5] pvid=40 frame-types=admit-only-untagged-and-priority-tagged
+/interface/bridge/port/set [find interface=ether6] pvid=40 frame-types=admit-only-untagged-and-priority-tagged
+/interface/bridge/set vlan40bridge vlan-filtering=yes pvid=40
+```
+
+Enable VLAN filtering on vlan255bridge for trunk use in Lab 7.4
+
+```
+/interface/bridge/set vlan255bridge vlan-filtering=yes pvid=255
 ```
 
 ### What This Accomplishes
@@ -266,13 +289,13 @@ Any device plugged into ether2 will:
 - Receive untagged traffic destined for VLAN 20 on egress
 - Work without any VLAN configuration on the device itself
 
-This is identical to how you'd configure an access port on a Cisco, Juniper, or Ruckus ICX switch.
+This is identical to how you'd configure an access port on a Cisco, Juniper, or RUCKUS ICX switch.
 
 ---
 
 ## Lab 7.4 — Configuring Trunk Ports
 
-A trunk port carries multiple VLANs to another switch using 802.1Q tags. The remote switch (MikroTik, Cisco, Ruckus ICX, etc.) handles tagging on its own ports.
+A trunk port carries multiple VLANs to another switch using 802.1Q tags. The remote switch (MikroTik, Cisco, RUCKUS ICX, etc.) handles tagging on its own ports.
 
 ### Understanding Trunk Configuration
 
@@ -357,6 +380,8 @@ By setting `admit-only-untagged-and-priority-tagged` on the physical port's brid
 
 ### Next Steps
 
-The MikroTik side of the trunk is now configured. To configure the remote switch (ICX, Cisco, or other enterprise switch), proceed to **Lab 18 — Enterprise Switch Integration**.
+The MikroTik side of the trunk is now configured. To configure the remote switch (ICX, Cisco, or other enterprise switch), proceed to **Lab 19 — Enterprise Switch Integration**.
 
 ---
+
+If you don't have a switch to connect at this point, move to Lab 8.

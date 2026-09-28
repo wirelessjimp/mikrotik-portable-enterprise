@@ -1,162 +1,237 @@
-# Lab 22 — Media Center
+# Lab 22 — Useful Tools
 
-*Prerequisites: Lab 1 (Initial Configuration), USB storage attached*
+*Prerequisites: Lab 1 (Initial Configuration)*
 
-MikroTik can serve media files via DLNA/UPnP and SMB. This is useful for demos, trade show booths, or just having fun with your router.
-
-> **Note:** Media server features work best on higher-end devices (RB5009, L009) with adequate RAM and processing power.
-
-### Why Two Methods?
-
-**DLNA/UPnP** works great for media streaming to Windows, Android, and smart TVs. But Apple dropped UPnP support years ago — it doesn't work on macOS or iOS.
-
-**SMB** provides universal file access that works on every platform: Windows, macOS, Linux, iOS, and Android. If you're sharing files at a trade show or demo where you can't control what devices people bring, SMB ensures everyone can access your content.
+MikroTik includes several built-in tools that are useful for network management and troubleshooting.
 
 ---
 
-## Lab 22.1 — DLNA/UPnP Media Server
+## Lab 22.1 — TFTP Server
 
-DLNA allows media players (VLC, Windows Media Player, smart TVs) to discover and play media from your MikroTik.
+When configuring network gear, you often need a TFTP server for firmware transfers. MikroTik has one built in.
 
-### Prepare Media Files
+### Verify USB Storage
 
-1. Ensure your USB drive is formatted and mounted (see Lab 21.1)
+If you completed Lab 5 (Containers), your USB drive is already formatted and mounted.
 
-2. Create a folder for media:
-   - Navigate to **Files**
-   - Click **New**
-   - Under **Name**, enter: `media`
-   - Under **Directory**, click the drop-down and select **usb1**
-   - Click **OK**
+1. Navigate to **Files**
 
-3. Upload media files (videos, music) to the media folder
+2. Verify the **usb1** folder exists
 
-> **Important:** The WinBox file upload drops files into the router's internal storage, not directly to the USB drive. If your media file is larger than the available internal storage (128 MB on most devices), the upload will fail. Use FTP instead (configured in Lab 21.2) to upload directly to `/usb1/media/`, or remove the USB drive and copy files from your computer, then reinsert it.
+3. If not, format your USB drive:
+   - Insert a USB flash drive into your MikroTik's USB port
+   - Navigate to **System** → **Disks**
+   - Select the USB drive
+   - Click **Format Drive**
+   - Choose **ext4** format
+   - Wait for formatting to complete
 
-### Enable Media Server
+### Upload Files to USB
 
-> **Important:** When a USB drive is plugged in, MikroTik automatically creates a dynamic media server on the default bridge that exposes the entire USB drive. To prevent this, disable auto-sharing before creating your own entry:
->
-> Navigate to **System** → **Disks**, select the USB drive, and uncheck **Auto Media Sharing** and **Auto SMB Sharing**. Or via CLI:
-> ```
-> /disk/settings/set auto-media-sharing=no auto-smb-sharing=no
-> ```
->
-> **Known issue (as of RouterOS 7.x):** Disabling auto-media-sharing does not fully remove the dynamic entry — it reappears each time the USB drive is reinserted. Clients may still see the dynamic server in their UPnP browser. With a properly configured firewall (a drop-all rule at the end of the input chain), clients can discover the entry but cannot access any content from it. Only your manually created media server on the correct VLAN interface will serve media. The phantom entry is harmless but cannot currently be hidden.
+4. Navigate to **Files**
 
-4. Navigate to **IP** → **Media**
+5. Find the **usb1** folder
 
-5. Click **Add New**:
+6. Create a small test file on your computer — open a text editor, type `TFTP test file`, and save it as `tftp-test.txt`
+  
+7. In the Files window, click **Upload** under Actions on the right
+
+8. Select your `tftp-test.txt` file — it uploads to the root of the file system
+
+9. Drag `tftp-test.txt` from the root into the `usb1` folder
+
+> **Note:** For this lab we're using a simple text file to verify TFTP works. In real deployments, this is where you'd place switch firmware images, configuration files, or any other files you need to serve over TFTP.
+
+### Configure TFTP Server
+
+10. Navigate to **IP** → **TFTP**
+
+11. Click **New**:
+    - **Enabled:** ✓ Checked
+    - **IP Addresses:** Leave blank (allows all clients) or enter a subnet to restrict access
+    - **Req. Filename:** The filename clients will request (e.g., `firmware.bin`)
+    - **Real Filename:** The actual file path (e.g., `/usb1/tftp-test.txt`)
+    - **Allow:** ✓ Checked
+    - **Read Only:** ✓ Checked (recommended for security)
+
+9. Click **Apply & OK**
+
+### Test TFTP Transfer
+
+10. From a client device, use a TFTP client to request the file:
+    ```
+    tftp 10.10.255.1 -c get tftp-test.txt
+    ```
+
+11. The file should transfer from the MikroTik's USB storage
+
+> **Use case:** Firmware upgrades for network devices that require TFTP (many switches, APs, and legacy devices).
+
+---
+
+## Lab 22.2 — FTP Server
+
+For more flexible file transfers, enable the FTP server.
+
+### Enable FTP Service
+
+1. Navigate to **IP** → **Services**
+
+2. Double-click **ftp**
+
+3. Configure:
    - **Enabled:** ✓ Checked
-   - **Interface:** vlan255
-   - **Path:** usb1/media/
-   - **Friendly Name:** Lab Media Server
+   - **Port:** 21
+   - **Available From:** Enter allowed subnets (e.g., 10.10.255.0/24) or leave blank for all
 
-6. Click **Apply**
+4. Click **OK**
 
-7. Verify **Status** shows **running**
+### Create FTP User
 
-> **Tip:** MikroTik's DLNA server does not recognize all media formats. M4V files (Apple's MP4 variant) will not appear — rename them to `.mp4`. Stick to common formats: `.mp4`, `.mp3`, `.avi`, `.mkv`.
+5. Navigate to **System** → **Users**
 
-8. Click **OK**
+6. Click the **Groups** tab
 
-### Play Media on Clients
+7. Click **New**:
+   - **Name:** ftp
+   - **Policies:** ftp, read (add write if uploads needed)
 
-**Windows Media Player:**
-1. Open Windows Media Player
-2. Look under Network locations for "Lab Media Server"
-3. Browse and play media files
+8. Click **Apply & OK**
 
-**VLC (Windows/macOS/Linux):**
-1. Open VLC
-2. Go to **View** → **Playlist**
-3. Under Local Network, click **Universal Plug'n'Play**
-4. Find "Lab Media Server" and browse content
+9. Click the **Users** tab
 
-**VLC (Android):**
-1. Open VLC app
-2. Go to **Browse**
-3. Under Local Network, find your media server
-4. Tap to play
+10. Click **New**:
+    - **Name:** ftpuser
+    - **Group:** ftp
+    - **Password:** [Create a password]
+    - **Confirm PAssword:** [Retype the password]
+    - **Allowed Address:** (optional — restrict by IP)
 
-> **Note:** DLNA/UPnP doesn't work well on macOS — use SMB instead (Lab 22.2).
+11. Click **OK**
+
+### Connect via FTP
+
+12. From your computer, connect using an FTP client:
+    - **Host:** 10.10.255.1 (use the gateway IP for whatever VLAN you're connected to)
+    - **Username:** ftpuser
+    - **Password:** [Your password]
+    - **Port:** 21
+
+> **Security note:** FTP transmits credentials in plain text. Use only on trusted networks, or restrict access via the Available From setting.
+
+> **FTP client options:**
+> **Recommended tools for macOS users:**
+> - [Transfer](https://www.intuitibits.com/products/transfer/) ($19.99) — runs TFTP, FTP, SFTP, HTTP, and HTTPS servers on your Mac. Built for network admins. Use it when you need your laptop to serve firmware or configs to network gear during initial setup.
+> - [Cyberduck](https://cyberduck.io/) (free) — FTP/SFTP client for uploading files TO the MikroTik, since Finder's FTP is read-only.
+>
+> The MikroTik's built-in TFTP and FTP servers handle the permanent use case — firmware and configs served from the USB drive without needing a laptop connected.> - **macOS:** Open Terminal and type `ftp 10.10.255.1`, or use [Cyberduck](https://cyberduck.io/) (free)
+> 
+> - **Windows:** Open File Explorer and type `ftp://10.10.255.1` in the address bar, or use [WinSCP](https://winscp.net/) (free)
+> - **Browser:** Most modern browsers (Chrome, Edge, Safari) have removed FTP support. Firefox still has limited support but may not work reliably. Use a dedicated FTP client instead.
+
+> **FTP client tips:**
+> - **Windows:** File Explorer supports FTP natively with full read/write — type `ftp://10.10.255.1` in the address bar and enter credentials when prompted. Drag and drop works in both directions.
+> - **macOS:** Finder's FTP is **read-only** — you can browse and download, but not upload. Use Terminal (`ftp` command), [Cyberduck](https://cyberduck.io/) (free), or any other FTP client for uploading.
+> - **Browser:** Chrome, Edge, and Safari have removed FTP support entirely. Firefox has limited read-only support. Use a dedicated client or your OS file manager instead.
 
 ---
 
-## Lab 22.2 — SMB File Sharing
+## Lab 22.3 — Interface Graphing
 
-SMB (Server Message Block) provides file sharing that works with Windows, macOS, and Linux.
+Monitor interface utilization over time with built-in graphing.
 
-### Enable SMB
+### Enable Interface Graphs
 
-1. Navigate to **IP** → **SMB**
+1. Navigate to **Tools** → **Graphing**
+
+2. Click **New**:
+   - **Interface:** Select an interface (e.g., ether1 for WAN)
+   - **Allow Address:** 0.0.0.0/0 (or restrict to management subnet)
+
+3. Click **Apply & OK**
+
+4. Repeat for other interfaces you want to monitor
+
+### View Graphs
+
+5. Click the **Interface Graphs** tab
+
+6. Double-click on an interface to view its graph
+
+7. Available views:
+   - **Daily:** Last 24 hours
+   - **Weekly:** Last 7 days
+   - **Monthly:** Last 30 days
+   - **Yearly:** Last 365 days
+
+8. When finished, you can close the views.
+
+### Real-Time Interface Stats
+
+For real-time (not historical) stats:
+
+1. Navigate to **Interfaces**
+
+2. Double-click an interface
+
+3. Click the **Traffic** section at the bottom to expand it
+
+4. View real-time transmit/receive rates and graphs
+
+---
+
+## Lab 22.4 — Bandwidth Test
+
+Test throughput between MikroTik devices or to a public bandwidth test server.
+
+### Test to a Public Server
+
+1. Navigate to **Tools** → **Bandwidth Test**
 
 2. Configure:
+   - **Test To:** `mikrotik.speedtest.alagas.net`
+   - **Protocol:** TCP
+   - **Direction:** both
+   - **Username:** `speedtest`
+   - **Password:** `MikroTikSG`
+
+3. Click **Start**
+
+4. View results showing throughput in both directions
+
+> **Note:** This is a community-run server. Availability may vary. TCP is recommended for testing through NAT.
+
+### Test Between Your Own Devices
+
+For a more controlled test, use your own MikroTik devices.
+
+5. On your **L009**, navigate to **Tools** → **BTest Server**:
    - **Enabled:** ✓ Checked
-   - **Domain:** WORKGROUP (or your preferred domain)
-   - **Comment:** MikroTik File Share
-   - **Interfaces:** all (or select specific interfaces)
+   - **Authenticate:** Unchecked
+   - Click **Apply** and **OK**
 
-3. Click **Apply**
+6. On your **mAP**, navigate to **Tools** → **Bandwidth Test**
 
-4. Verify **Status** shows **enabled**
+7. Configure:
+   - **Test To:** [Your L009's IP address]
+   - **Protocol:** TCP
+   - **Direction:** both
 
-### Create SMB Users
+8. Click **Start**
 
-5. Click **Users** on the right side of the SMB settings window
+9. Compare the results — testing between your own devices measures the actual link and device performance without internet variables.
 
-6. The default **guest** user is enabled — select it and click **Disable**
-
-7. Click **New** to create a user:
-   - **Name:** mediauser
-   - **Password:** [Create a password]
-   - **Read Only:** ✓ Checked
-
-8. Click **Apply** and **OK**
-
-### Create Shares
-
-9. Click **Shares** on the right side of the SMB settings window
-
-10. Click **Add New**:
-   - **Name:** Lab Media Server
-   - **Directory:** /usb1/media
-   - **Read Only:** ✓ Checked
-   - **Valid Users:** Select **mediauser** from the drop-down
-
-11. Click **Apply** and **OK**
-
-### Connect from Clients
-
-**Windows:**
-1. Open File Explorer
-2. In the address bar, enter: `\\` followed by your router's gateway IP (e.g., `\\10.10.20.1`)
-3. Enter your SMB username and password when prompted
-4. Select the share you created — ignore any other shares that appear
-
-**macOS:**
-1. Open Finder
-2. Press **Cmd+K** (or Go → Connect to Server)
-3. Enter: `smb://` followed by your router's gateway IP for your VLAN (e.g., `smb://10.10.20.1`)
-4. Click **Connect**
-5. Enter your SMB username and password
-6. Select the share you created — ignore any other shares that appear
-
-**Linux:**
-1. Open file manager
-2. Enter in address bar: `smb://` followed by your router's gateway IP (e.g., `smb://10.10.20.1`)
-3. Enter your SMB username and password
-4. Select the share you created
+> **Note:** The original MikroTik public server (`bandwidth-test.mikrotik.com`) was shut down in 2025. Additional community servers may be available at [btest-rs](https://github.com/manawenuz/btest-rs).
 
 ---
 
 ## Lab 22 Summary
 
-| Method | Best For | Client Support |
-|--------|----------|----------------|
-| DLNA/UPnP | Media streaming to players | Windows, VLC, Smart TVs, Android |
-| SMB | File access, macOS support | Windows, macOS, Linux |
-
-> **Reality check:** While this works for demos and small-scale use, a dedicated NAS or media server is better for serious media serving. But for a trade show booth running a demo video on loop? This gets the job done.
+| Tool | Purpose |
+|------|---------|
+| TFTP Server | Firmware transfers to network devices |
+| FTP Server | General file sharing |
+| Interface Graphing | Historical bandwidth monitoring |
+| Bandwidth Test | Throughput testing between devices |
 
 ---

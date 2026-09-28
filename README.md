@@ -16,10 +16,12 @@ The entire lab runs on two devices:
 
 | Device | Role | Cost |
 |--------|------|------|
-| MikroTik hEX S | Primary router — VLANs, DHCP, firewall, WireGuard, containers | ~$69 |
-| MikroTik mAP | Second device — AP, RADIUS client, remote site | ~$49 |
+| MikroTik L009 | Primary router — VLANs, DHCP, firewall, WireGuard, containers | ~$114 |
+| MikroTik mAP 2nD | Second device — AP, RADIUS client, remote site | ~$49 |
 
-**Total: Under $120.** Add an Ethernet cable and a USB drive and you're still under $200.
+**Total: Under $170.** Add an Ethernet cable and a USB drive and you're still under $200.
+
+To get dual-band Wi-Fi functionality from a Mikrotik device, consider the MikroTik hAP ac2 or hAP ax2. They are larger and cost more than the mAP 2nD, but are dual-band with more horsepower than the mAP 2nd.
 
 RouterOS v7 is identical across every MikroTik platform — hEX S, L009, RB5009, CCR2004. Same CLI, same WinBox, same feature set. Learn on a $69 device, deploy on anything.
 
@@ -30,7 +32,7 @@ By the end of this guide, your MikroTik is:
 - A multi-VLAN router with isolated subnets and per-VLAN DHCP
 - A firewall enforcing inter-VLAN isolation with management VLAN access
 - A WireGuard VPN server accepting site-to-site and road warrior connections
-- A RADIUS server (User Manager) for WPA2-Enterprise authentication
+- A RADIUS server (User Manager) for WPA2/WPA3-Enterprise authentication
 - A container host running speed test and network testing tools
 - A DNS server with ad blocking
 - A captive portal for guest access
@@ -47,30 +49,39 @@ Initial setup, packages, USB storage, containers, MAC access, and backup.
 **Labs 07-10 — VLANs and Infrastructure**
 Single-bridge VLAN filtering, DHCP, port testing, and firewall isolation.
 
-**Labs 11-15 — Security and VPN**
-Wireless AP, RADIUS/WPA2-Enterprise, WireGuard server and clients, Cloud and Back to Home.
+**Labs 11-12 — Security**
+Wireless AP and RADIUS/WPA2-Enterprise with User Manager.
 
-**Lab 16 — Second Device (mAP)**
-Setting up the mAP as a managed AP, trunk endpoint, and travel router.
+**Lab 13 — mAP Setup**
+Setting up the mAP as a managed AP with fallback access and management Wi-Fi.
 
-**Labs 17-19 — Enterprise Integration**
-ICX switch integration, RUCKUS AP integration, and AP configuration.
+**Labs 14-16 — VPN**
+WireGuard server, WireGuard clients, and Cloud/Back to Home.
 
-**Labs 20-23 — Tools and Services**
+**Lab 17 — mAP Advanced**
+WireGuard tunnel from mAP to main router, RoMON remote management.
+
+**Lab 18 — Scripting**
+RSC files, configuration scripts, and automated deployment.
+
+**Labs 19-20 — Enterprise Integration**
+ICX switch integration and RUCKUS AP integration.
+
+**Labs 21-24 — Tools and Services**
 Traffic analysis, TFTP/FTP/graphing, DLNA/SMB media server, and NTP.
 
-**Labs 24-26 — WAN and Guest Access**
+**Labs 25-27 — WAN and Guest Access**
 WAN sources (USB tethering, cellular, Wi-Fi client mode), dual-WAN failover, and hotspot captive portal.
 
-**Lab 27 — DNS Advanced**
+**Lab 28 — DNS Advanced**
 Static entries, DNS over HTTPS, and ad blocking.
 
-**Lab 28 — Administrative Tasks**
+**Lab 29 — Administrative Tasks**
 Router identity, passwords, software upgrades, user management, scheduled tasks, and logging.
 
 ## Quick Start
 
-1. Get a MikroTik hEX S (or any RouterOS v7 device)
+1. Get a MikroTik L009/RB5009/hEX S (or any RouterOS v7 device)
 2. Start at Lab 1
 3. Work through the labs in order
 4. Break things, restore from backup (Lab 3), try again
@@ -82,6 +93,15 @@ Router identity, passwords, software upgrades, user management, scheduled tasks,
 - WinBox (download from mikrotik.com) or a web browser
 - An Ethernet cable
 - A USB drive (for container storage)
+
+## Security Notice
+
+This guide builds lab networks intended to sit behind an existing firewall — not directly exposed to the internet. If you plan to deploy a MikroTik as your primary edge firewall, additional hardening is required beyond what these labs cover.
+
+In particular: **never expose SSH (port 22) to the public internet.** In September 2026, a critical exploit chain called MikroTrick (CVE-2026-67276 + CVE-2026-86060) was used to hijack MikroTik routers with SSH open to the WAN. Always keep RouterOS updated and use WireGuard for remote management instead of opening management ports directly.
+
+- [MikroTik Security Advisory](https://mikrotik.com/supportsec/september-2026-vulnerability/)
+- [CERT Polska Advisory](https://cert.pl/en/posts/2026/09/vulnerabilities-in-mikrotik-routeros-actively-exploited/)
 
 ## File Organization
 
@@ -99,23 +119,25 @@ labs/
 ├── lab-10.md    # Firewall
 ├── lab-11.md    # Wireless AP
 ├── lab-12.md    # User Manager & RADIUS
-├── lab-13.md    # WireGuard Server
-├── lab-14.md    # WireGuard Clients
-├── lab-15.md    # Cloud & Back to Home
-├── lab-16.md    # Adding Gear (mAP)
-├── lab-17.md    # ICX Switch Integration
-├── lab-18.md    # RUCKUS AP Integration
-├── lab-19.md    # AP Configuration
-├── lab-20.md    # Traffic Analysis
-├── lab-21.md    # Useful Tools
-├── lab-22.md    # Media Center
-├── lab-23.md    # Time & NTP
-├── lab-24.md    # WAN Sources
-├── lab-25.md    # Dual WAN Failover
-├── lab-26.md    # Hotspot & Captive Portal
-├── lab-27.md    # DNS Advanced
-└── lab-28.md    # Administrative Tasks
+├── lab-13.md    # mAP Setup
+├── lab-14.md    # WireGuard Server
+├── lab-15.md    # WireGuard Clients
+├── lab-16.md    # Cloud & Back to Home
+├── lab-17.md    # mAP Advanced (WireGuard & RoMON)
+├── lab-18.md    # Scripting & RSC Files
+├── lab-19.md    # Enterprise Switch Integration
+├── lab-20.md    # Enterprise AP Integration
+├── lab-21.md    # Traffic Analysis
+├── lab-22.md    # Useful Tools
+├── lab-23.md    # Media Center
+├── lab-24.md    # Time & NTP
+├── lab-25.md    # WAN Sources
+├── lab-26.md    # Dual WAN Failover
+├── lab-27.md    # Hotspot & Captive Portal
+├── lab-28.md    # DNS Advanced
+└── lab-29.md    # Administrative Tasks
 ```
+> **Note:** Any sub-lab numbered X.9 (e.g., Lab 7.9, Lab 10.9) is optional or reference material. These cover advanced topics, alternative approaches, or background information that isn't required to complete the core build.
 
 ## About
 
@@ -123,4 +145,10 @@ Written by Jim Palmer (CWNE #304). Born from three years of building portable en
 
 ## License
 
-This guide is provided as-is for educational purposes. Feel free to use it to learn, build, and break things.
+This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+You are free to share and adapt this material, provided you:
+
+- **Credit** Jim Palmer (CWNE #304) as the original author
+- **Do not** use it for commercial purposes
+- **Share** any derivative work under the same license

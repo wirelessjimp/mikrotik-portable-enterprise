@@ -14,7 +14,7 @@ First, assign IP addresses to each VLAN interface. These become the default gate
 
 1. Navigate to **IP** → **Addresses**
 
-2. Click **Add New** and configure:
+2. Click **New** and configure:
    - **Comment:** VLAN 20
    - **Address:** 10.10.20.1/24
    - **Network:** 10.10.20.0 (click the **+** button to expand)
@@ -23,7 +23,7 @@ First, assign IP addresses to each VLAN interface. These become the default gate
 
    > **Important:** Assign the IP address to the **VLAN interface** (vlan20), not the bridge (vlan20bridge). When VLAN filtering is enabled on the bridge, traffic arrives on the VLAN interface. Services like DHCP will not function correctly if the IP address is on the bridge instead of the VLAN interface.
 
-3. Click **Apply** and **OK**
+3. Click **Apply** & **OK**
 
 4. Create the second IP address using the UI:
    - **Comment:** VLAN 30
@@ -59,13 +59,13 @@ IP pools define which addresses DHCP can hand out.
 
 1. Navigate to **IP** → **Pool**
 
-2. Click **Add New** and configure:
+2. Click **New** and configure:
    - **Comment:** VLAN 20
    - **Name:** vlan20
    - **Addresses:** 10.10.20.10-10.10.20.250
    - **Next Pool:** none
 
-3. Click **Apply** and **OK**
+3. Click **Apply** & **OK**
 
 4. Create the second pool using the UI:
    - **Comment:** VLAN 30
@@ -92,7 +92,7 @@ IP pools define which addresses DHCP can hand out.
 
 1. Navigate to **IP** → **DHCP Server**
 
-2. Click **Add New** and configure:
+2. Click **New** and configure:
    - **Name:** vlan20
    - **Interface:** vlan20
    - **Lease Time:** 02:00:00 (2 hours)
@@ -102,7 +102,7 @@ IP pools define which addresses DHCP can hand out.
 
    > **Important:** Bind the DHCP server to the **VLAN interface** (vlan20), not the bridge (vlan20bridge). This must match where the IP address was assigned in Lab 8.1. If the DHCP server is bound to an interface without an IP address, it will show as INVALID and will not issue leases.
 
-3. Click **Apply** and **OK**
+3. Click **Apply** & **OK**
 
 4. Create the second DHCP server using the UI:
    - **Name:** vlan30
@@ -122,30 +122,37 @@ IP pools define which addresses DHCP can hand out.
 
 > **⚠ Critical: Do not skip this section.** Creating DHCP servers (above) is not enough — each server also requires a network definition in the **Networks** tab. Without it, the DHCP server is bound to the interface but has no network parameters to hand out. Clients will send DHCP discover requests and receive nothing in return. This is a silent failure — the server appears configured but is completely non-functional. Complete every network entry below before testing.
 
-6. Click the **Networks** tab at the top.
+6. From **IP** → **DHCP Server** window click the **Networks** tab at the top.
 
-7. Click **Add New** and configure:
+8. Click **New** and configure:
    - **Comment:** VLAN 20
    - **Address:** 10.10.20.0/24
    - **Gateway:** 10.10.20.1 (click the **+** button to expand)
    - **Netmask:** 255.255.255.0
    - **DNS Servers:** 10.10.20.1
 
-8. Click **Apply** and **OK**
+10. Click **Apply** & **OK**
 
-9. Create the second network using the UI:
+11. Create the second network using the UI:
    - **Comment:** VLAN 30
    - **Address:** 10.10.30.0/24
    - **Gateway:** 10.10.30.1
    - **Netmask:** 255.255.255.0
    - **DNS Servers:** 10.10.30.1
 
-10. Create the remaining networks using CLI:
+11. Create the remaining networks using CLI:
 
     ```
     /ip/dhcp-server/network/add address=10.10.40.0/24 gateway=10.10.40.1 netmask=255.255.255.0 dns-server=10.10.40.1 comment="VLAN 40"
     /ip/dhcp-server/network/add address=10.10.255.0/24 gateway=10.10.255.1 netmask=255.255.255.0 dns-server=10.10.255.1 comment="VLAN 255"
     ```
+> **Optional:** If you installed Pi-hole in Lab 5.9, you can point your DHCP DNS at the Pi-hole container (172.17.0.5) instead of the VLAN gateway for network-wide ad blocking. Only do this if the Pi-hole container is running and healthy — if it stops, DNS resolution stops for that VLAN. You can always change it back to the gateway IP later.
+
+---
+
+### Lab 8 Checkpoint
+
+At this point, you have IP addresses, DHCP pools, DHCP servers, and DHCP networks configured for each VLAN. Everything is in place, but we haven't tested it yet — that's Lab 9. If you're eager to verify, plug a laptop into ether2 and see if you get a 10.10.20.x address. If not, don't troubleshoot yet — Lab 9 walks through systematic testing and common issues.
 
 ---
 
@@ -159,20 +166,20 @@ Most AP vendors use DHCP Option 43 to tell APs where to find their controller. T
 
 1. Navigate to **IP** → **DHCP Server** → **Options** tab
 
-2. Click **Add New**:
+2. Click **New**:
    - **Name:** (Vendor) Option 43 — use the vendor name to identify the controller
    - **Code:** 43
    - **Value:** `0x[hex_code]` — see vendor codes below
 
-3. Click **Apply** and **OK**
+3. Click **Apply** & **OK**
 
 4. Navigate to **Option Sets** tab
 
-5. Click **Add New**:
+5. Click **New**:
    - **Name:** (Vendor) Option 43
    - **Options:** Select the option you created in step 2
 
-6. Click **Apply** and **OK**
+6. Click **Apply** & **OK**
 
 7. Navigate to **DHCP** tab
 
@@ -180,7 +187,7 @@ Most AP vendors use DHCP Option 43 to tell APs where to find their controller. T
 
 9. Find **DHCP Option Set** and select your option set
 
-10. Click **Apply** and **OK**
+10. Click **Apply** & **OK**
 
 ### Understanding the Hex Value
 

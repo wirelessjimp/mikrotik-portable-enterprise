@@ -1,274 +1,289 @@
-# Lab 28 — Administrative Tasks
+# Lab 28 — DNS Configuration
 
-*Prerequisites: Lab 1 (Initial Configuration)*
+*Prerequisites: Lab 1 (Initial Configuration), Lab 8 (DHCP)*
 
-Routine administrative tasks you'll perform throughout the life of your MikroTik.
-
----
-
-## Lab 28.1 — Change Router Identity
-
-1. Navigate to **System** → **Identity**
-
-2. Enter a descriptive name
-
-3. Click **OK**
-
-The identity appears in:
-- WinBox title bar
-- Terminal prompt
-- Neighbor discovery
-- SNMP (if configured)
+DNS is one of those things that "just works" until it doesn't. This lab covers practical DNS configuration on MikroTik — static entries for local hosts, secure upstream DNS, and forcing all DNS through your router.
 
 ---
 
-## Lab 28.2 — Change Admin Password
+## Lab 28.1 — Understanding MikroTik DNS
 
-1. Navigate to **System** → **Users**
+By default, your MikroTik acts as a DNS server for clients and forwards queries to upstream servers (typically your ISP's DNS, learned via DHCP).
 
-2. Double-click on **admin** (or your admin user)
+**Current DNS settings:**
 
-3. Click **Password** under Actions in the right-hand column
+1. Navigate to **IP** → **DNS**
 
-4. Enter:
-   - **New Password:** [your new password]
-   - **Confirm Password:** [repeat new password]
-
-5. Click **Change Now**
-
-> **Best practice:** Use strong passwords. Consider creating named user accounts instead of using the default "admin" account.
-
----
-
-## Lab 28.3 — RouterOS Software Upgrade
-
-MikroTik releases regular updates. Keep your device current for security and features.
-
-### Check for Updates
-
-1. Navigate to **System** → **Packages**
-
-2. Click **Check For Updates**
-
-3. Select **Channel:**
-   - **stable:** Production-ready (recommended)
-   - **long-term:** Conservative updates, extended support
-   - **testing:** Pre-release features
-   - **development:** Bleeding edge (not recommended for production)
-
-4. If updates are available, the window will show your **Installed Version** and the **Latest Version** available on that channel
-
-### Install Updates
-
-5. Click **Download & Install**
-
-6. The router will download the update and reboot automatically
-
-7. After reboot, reconnect and verify the new version in **System** → **Packages**
+2. Review:
+   - **Servers:** Upstream DNS servers (where queries are forwarded)
+   - **Dynamic Servers:** DNS servers learned from DHCP client
+   - **Allow Remote Requests:** Must be checked for clients to use MikroTik as DNS
+   - **Cache Size:** How many entries to cache locally
+   - **Cache Used:** Current cache utilization
 
 ---
 
-## Lab 28.4 — RouterBOARD Firmware Upgrade
+## Lab 28.2 — Static DNS Entries
 
-Separate from RouterOS, the RouterBOARD firmware is the low-level hardware firmware.
+Create local DNS names for devices on your network. Instead of remembering `172.17.0.2`, you can use `speedtest.lab`.
 
-### Check Firmware Version
+### Add a Static Entry
 
-1. Navigate to **System** → **RouterBOARD**
+1. Click on **Static** in the right-hand menu
 
-2. Compare:
-   - **Current Firmware:** What's running now
-   - **Upgrade Firmware:** What's available
+2. Click **New**:
+   - **Name:** speedtest.lab
+   - **Address:** 172.17.0.2
+   - **TTL:** 1d (or leave default)
+   - **Comment:** OpenSpeedTest container
 
-### Upgrade Firmware
+3. Click **Apply** and **OK**
 
-3. If versions differ, click **Upgrade** under Actions
+### Common Static Entries
 
-4. Click **OK** to confirm
+```
+/ip dns static add name=router.lab address=10.10.255.1 comment="Main router"
+/ip dns static add name=nas.lab address=10.10.255.10 comment="NAS"
+/ip dns static add name=speedtest.lab address=172.17.0.2 comment="OpenSpeedTest container"
+/ip dns static add name=files.lab address=172.17.0.4 comment="nginx content server"
+```
 
-5. The firmware stages for next boot — you must reboot to apply
+### Test the Entry
 
-6. Navigate to **System** → **Reboot**
+4. From a client on your network, ping the hostname:
+   ```
+   ping speedtest.lab
+   ```
 
-7. Click **Yes** to reboot
+5. The name should resolve to the IP you configured
 
-8. After reboot, verify firmware version matches
+> **Tip:** Use a consistent naming scheme. `.lab`, `.home`, or `.local` are common choices. Avoid `.local` if you have Apple devices — mDNS conflicts can occur.
 
 ---
 
-## Lab 28.5 — Create Additional Users
+## Lab 28.3 — Configure Upstream DNS Servers
 
-Instead of sharing the admin account, create individual user accounts.
+Replace your ISP's DNS with something faster, more private, or more reliable.
 
-### Create a User Group
+### Popular Public DNS Options
 
-1. Navigate to **System** → **Users**
+| Provider | Primary | Secondary | Notes |
+|----------|---------|-----------|-------|
+| Cloudflare | 1.1.1.1 | 1.0.0.1 | Fast, privacy-focused |
+| Google | 8.8.8.8 | 8.8.4.4 | Reliable, logs queries |
+| Quad9 | 9.9.9.9 | 149.112.112.112 | Security-focused, blocks malware |
+| OpenDNS | 208.67.222.222 | 208.67.220.220 | Filtering options available |
 
-2. Click the **Groups** tab
+### Set Static DNS Servers
 
-3. Click **Add New**:
-   - **Name:** operators
-   - **Policies:** Check the permissions appropriate for this group:
-     - **local:** Local console login
-     - **telnet:** Telnet access
-     - **ssh:** SSH access
-     - **ftp:** FTP access
-     - **reboot:** Reboot device
-     - **read:** View configuration
-     - **write:** Modify configuration
-     - **policy:** Manage users and groups (leave off for non-admins)
-     - **test:** Run tests like ping, traceroute, bandwidth-test
-     - **winbox:** WinBox access
-     - **password:** Change own password
-     - **web:** WebFig access
-     - **sniff:** Packet sniffer access
-     - **sensitive:** View sensitive info like passwords and keys
-     - **api / rest-api:** API access
-     - **romon:** RoMON access
+1. Navigate to **IP** → **DNS**
 
-> **Tip:** For a basic operator account, start with: local, read, winbox, reboot, and test. Add write only if they need to make changes.
+2. In **Servers**, enter your preferred DNS:
+   ```
+   1.1.1.1,1.0.0.1
+   ```
 
-4. Click **Apply** and **OK**
+3. Click **Apply**
 
-### Create a User
+### Remove Dynamic DNS (ISP servers)
 
-5. Click the **Users** tab
+If your WAN uses DHCP, the router learns DNS from your ISP. To use only your configured servers:
 
-6. Click **Add New**:
-   - **Name:** [username]
-   - **Group:** operators
-   - **Password:** [password]
-   - **Allowed Address:** (optional — restrict login by IP)
+4. Navigate to **IP** → **DHCP Client**
+
+5. Double-click your WAN DHCP client
+
+6. Uncheck **Use Peer DNS**
 
 7. Click **OK**
 
----
-
-## Lab 28.6 — Scheduled Reboot
-
-Schedule automatic reboots (useful for stability on long-running devices).
-
-1. Navigate to **System** → **Scheduler**
-
-2. Click **Add New**:
-   - **Name:** weekly-reboot
-   - **Start Date:** [pick a date]
-   - **Start Time:** 04:00:00 (or preferred time)
-   - **Interval:** 7d 00:00:00 (weekly)
-   - **On Event:**
-     ```
-     /system reboot
-     ```
-
-3. Click **OK**
-
-> **Note:** Scheduled reboots can mask underlying issues. Use sparingly and investigate if you need them for stability.
+8. Return to **IP** → **DNS** and verify Dynamic Servers is now empty
 
 ---
 
-## Lab 28.7 — View Logs
+## Lab 28.4 — DNS-over-HTTPS (DoH)
 
-MikroTik logs system events. Review them regularly and when troubleshooting.
+Standard DNS queries are unencrypted — your ISP can see every domain you look up. DNS-over-HTTPS encrypts queries to the upstream server.
 
-### View Logs
+### Import the Certificate
 
-1. Navigate to **Log**
+DoH requires trusting the upstream server's certificate. Cloudflare example:
 
-2. Scroll through recent events
+1. Download the Cloudflare root certificate:
+   - Visit https://developers.cloudflare.com/1.1.1.1/encryption/
+   - Download the DigiCert Global Root CA certificate
 
-3. Use the filter field to search (e.g., "error", "dhcp", "wireless")
+2. Navigate to **Files** in WinBox
 
-### Configure Logging
+3. Upload the certificate file
 
-4. Navigate to **System** → **Logging**
+4. Navigate to **System** → **Certificates**
 
-5. View logging rules — what events go where (memory, disk, remote)
+5. Click **Import**
 
-6. Click **Add New** to create custom logging rules:
-   - **Topics:** Select event types (e.g., dhcp, wireless, firewall)
-   - **Action:** Where to send logs (memory, disk, remote)
+6. Select the uploaded certificate file
+
+7. Click **Import** again
+
+### Configure DoH
+
+8. Navigate to **IP** → **DNS**
+
+9. In **DoH Server**, enter:
+   ```
+   https://cloudflare-dns.com/dns-query
+   ```
+
+10. Check **Verify DoH Certificate**
+
+11. Click **Apply**
+
+### How DoH Works with Standard DNS
+
+- RouterOS tries DoH first
+- If DoH fails, it falls back to standard DNS servers
+- Keep standard servers configured as backup
+
+### Verify DoH is Working
+
+12. Navigate to https://1.1.1.1/help in a browser on a client device
+
+13. It should show "Using DNS over HTTPS (DoH): Yes"
+
+> **Note:** Some DoH providers have known issues with MikroTik. Cloudflare is well-tested. Quad9 may show errors in logs but still functions.
+
+---
+
+## Lab 28.5 — Force All DNS Through MikroTik
+
+Some devices (smart TVs, IoT devices, even Chrome) ignore your DHCP-provided DNS and use hardcoded servers like 8.8.8.8. This bypasses your DNS configuration.
+
+### The Problem
+
+- You configure DNS filtering or DoH
+- Smart TV ignores it and queries Google directly
+- Your filtering is bypassed
+
+### The Solution: Redirect Port 53
+
+Force all DNS traffic through your router, regardless of what the client requests:
+
+```
+/ip firewall nat add chain=dstnat protocol=udp dst-port=53 action=redirect to-ports=53 comment="Force DNS to router"
+/ip firewall nat add chain=dstnat protocol=tcp dst-port=53 action=redirect to-ports=53 comment="Force DNS to router (TCP)"
+```
+
+### Via WinBox
+
+1. Navigate to **IP** → **Firewall** → **NAT**
+
+2. Click **Add New**
+
+3. On the **General** tab:
+   - **Chain:** dstnat
+   - **Protocol:** udp
+   - **Dst. Port:** 53
+
+4. On the **Action** tab:
+   - **Action:** redirect
+   - **To Ports:** 53
+
+5. Add a **Comment:** "Force DNS to router"
+
+6. Click **OK**
+
+7. Repeat for TCP (some DNS uses TCP)
+
+### Exclude Specific Devices (Optional)
+
+If you have a device that legitimately needs to use its own DNS (like a Pi-hole):
+
+```
+/ip firewall nat add chain=dstnat protocol=udp dst-port=53 src-address=10.10.255.100 action=accept comment="Allow Pi-hole direct DNS"
+```
+
+Place this rule **before** the redirect rules.
+
+---
+
+## Lab 28.6 — DNS Adblock (RouterOS 7.15+)
+
+RouterOS 7.15 introduced native DNS adblock lists. This blocks ads and trackers at the DNS level without external software.
+
+### ⚠️ Here Be Dragons
+
+Before enabling DNS adblock, understand the tradeoffs:
+
+**Pros:**
+- Network-wide ad blocking
+- No additional hardware/containers needed
+- Works on all devices automatically
+
+**Cons:**
+- Some websites break when ad domains are blocked
+- Requires ongoing blocklist maintenance
+- Troubleshooting "why won't this site work?" becomes harder
+- Aggressive lists can block legitimate services
+
+**If you've tried Pi-hole or similar and found it frustrating, this will be similar.**
+
+### Basic Setup (If You Want to Try It)
+
+1. Navigate to **IP** → **DNS**
+
+2. Increase **Cache Size** to at least 16384 (more if you have RAM)
+
+3. Click **Apply**
+
+4. Navigate to **IP** → **DNS** → **Adlist**
+
+5. Click **Add New**:
+   - **URL:** `https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts`
+   - **SSL Verify:** yes
+
+6. Click **OK**
+
+7. The list downloads and populates the DNS cache with blocked entries
+
+### If Things Break
+
+Websites not loading? Forms not submitting? Videos not playing?
+
+1. Navigate to **IP** → **DNS** → **Adlist**
+
+2. Disable the adlist (uncheck **Enabled**)
+
+3. Flush the DNS cache:
+   ```
+   /ip dns cache flush
+   ```
+
+4. Test again
+
+### Alternative: Use a Filtering DNS Provider
+
+For simpler ad blocking without managing lists yourself, point your upstream DNS to a filtering provider:
+
+| Provider | DNS Servers | What It Blocks |
+|----------|-------------|----------------|
+| Quad9 | 9.9.9.9 | Malware, phishing |
+| CleanBrowsing | 185.228.168.9 | Adult content + security |
+| AdGuard DNS | 94.140.14.14 | Ads + trackers |
+| NextDNS | Custom | Configurable (account required) |
+
+This is "set and forget" with no blocklist management.
 
 ---
 
 ## Lab 28 Summary
 
-| Task | Location |
-|------|----------|
-| Change identity | System → Identity |
-| Change password | System → Users → [user] → Password |
-| Software update | System → Packages → Check For Updates |
-| Firmware update | System → RouterBOARD → Upgrade |
-| Add users | System → Users |
-| Scheduled tasks | System → Scheduler |
-| View logs | Log |
+| Feature | Purpose |
+|---------|---------|
+| Static DNS | Local hostname resolution |
+| Upstream servers | Replace ISP DNS |
+| DNS-over-HTTPS | Encrypted DNS queries |
+| Force DNS redirect | Prevent DNS bypass |
+| DNS Adblock | Block ads/trackers (advanced) |
 
----
+**Recommendation for most users:** Configure static entries for your local devices, use Cloudflare or Quad9 as upstream, enable DoH, and force DNS through the router. Skip the adblock lists unless you're prepared to troubleshoot.
 
-
----
-
-# Lab Notes — Labs 20-26
-
-**Lab 20 — Packet Capture & Torch**
-
-| Item | Value |
-|------|-------|
-| Streaming PC IP | |
-| Streaming Port | 37008 |
-
-**Lab 21 — Useful Tools**
-
-| Item | Value |
-|------|-------|
-| TFTP Files Location | /usb1/ |
-| FTP Username | |
-| FTP Password | |
-
-**Lab 22 — Media Center**
-
-| Item | Value |
-|------|-------|
-| Media Folder Path | /usb1/media/ |
-| DLNA Server Name | |
-| SMB Username | |
-| SMB Password | |
-
-**Lab 23 — NTP**
-
-| Item | Value |
-|------|-------|
-| NTP Servers | time1.google.com, time2.google.com |
-| Local NTP Stratum | 5 |
-
-**Lab 24 — WAN Options & Failover**
-
-| Item | Value |
-|------|-------|
-| Primary WAN Interface | |
-| Primary WAN Distance | 1 |
-| Backup WAN Interface | |
-| Backup WAN Distance | 2 |
-| Cellular Interface Name | |
-| Wi-Fi Client SSID | |
-| Wi-Fi Client Gateway IP | 172.16.139.1 |
-
-**Lab 26 — Hotspot**
-
-| Item | Value |
-|------|-------|
-| Guest Bridge Name | |
-| Hotspot Interface | |
-| Guest VLAN | |
-
-**Lab 28 — Administrative Tasks**
-
-| Item | Value |
-|------|-------|
-| Router Identity | |
-| Admin Username | |
-| Additional Users Created | |
-
----
-
-*Document Version: Draft 1.0*
-*Last Updated: March 2026*

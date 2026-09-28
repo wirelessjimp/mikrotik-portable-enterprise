@@ -39,7 +39,7 @@ WinBox is a native application providing the most complete management experience
 
 ### Connect to Your Router
 
-4. In the **Neighbors** tab on the right, your router should appear with its identity.
+4. In the **Neighbors** window on the right, your router should appear with its identity.
 
 5. Click on your router to select it.
 
@@ -149,10 +149,12 @@ This shows all interfaces. Now try:
 ```
 Then press `Tab` — it shows available sub-commands.
 
+Press `Ctrl+C` to clear the current line and return to the prompt. Now  try:
+
 ```
 /ip address print
 ```
-Shows IP addresses. Press `?` at any point to see what's available.
+Shows IP addresses. Press `tab` at any point to see what's available.
 
 ### Safe Mode (Critical for Remote Management)
 
@@ -171,7 +173,7 @@ This is a lifesaver when modifying firewall rules or IP addresses remotely.
 
 RoMON (Router Management Overlay Network) creates a management network that spans across connected MikroTik devices. Once configured, you can manage any MikroTik device in the chain through any other device — even if you're not directly connected to it.
 
-We configure it now; it becomes useful in Lab 16 when we add the mAP access point.
+We configure it now; it becomes useful in Lab 13 when we add the mAP access point.
 
 > **Note:** RoMON requires "advanced" device mode (Lab 3.3). If you skipped that lab, RoMON will show "inactivated, not allowed by device-mode" and won't work.
 
@@ -183,7 +185,7 @@ We configure it now; it becomes useful in Lab 16 when we add the mAP access poin
    - **Enabled:** Checked
    - **Secrets:** Enter a secure password (this will be shared across all your MikroTik devices)
 
-3. Click **Apply**
+3. Click **Apply** 
 
 4. On the right side under **Configuration**, click **Ports**
 
@@ -196,7 +198,7 @@ We configure it now; it becomes useful in Lab 16 when we add the mAP access poin
 
 7. Close the RoMON windows.
 
-> **Note:** You won't see any RoMON neighbors yet — there's only one device. When we add the mAP in Lab 16, you'll be able to discover and manage it through RoMON without needing a direct connection.
+> **Note:** You won't see any RoMON neighbors yet — there's only one device. When we add the mAP in Lab 13, you'll be able to discover and manage it through RoMON without needing a direct connection.
 
 ### Using RoMON (Preview)
 
@@ -227,7 +229,7 @@ MikroTik offers a mobile app for iOS and Android that provides:
 
 The app works best when your phone is connected to a network managed by your MikroTik. We'll use this in later labs, particularly:
 - **Lab 11** — Transferring certificates for EAP authentication
-- **Lab 16** — Managing devices when connected to the mAP's Wi-Fi via RoMON
+- **Lab 13** — Managing devices when connected to the mAP's Wi-Fi via RoMON
 
 For now, just install the app so it's ready.
 
@@ -269,3 +271,5 @@ RoMON processes secrets in order:
 Adding the blank entry temporarily allows mixed authentication, revealing misconfigured secrets.
 
 ---
+
+If you have successfully made it to this point, you can move on to Lab 04.
