@@ -33,3 +33,10 @@
 * [Lab 27 — Hotspot & Captive Portal](labs/lab-27.md)
 * [Lab 28 — DNS Advanced](labs/lab-28.md)
 * [Lab 29 — Administrative Tasks](labs/lab-29.md)
+
+## Appendices
+
+* [Appendix A — Useful Links](labs/appendix-a.md)
+* [Appendix B — Reset Procedures](labs/appendix-b.md)
+* [Appendix C — Additional MikroTik Capabilities](labs/appendix-c.md)
+* [Appendix D — Network Diagrams](labs/appendix-d.md)
