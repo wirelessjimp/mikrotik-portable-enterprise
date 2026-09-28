@@ -117,12 +117,22 @@ For more flexible file transfers, enable the FTP server.
     - **Password:** [Your password]
     - **Port:** 21
 
+> **Security note:** FTP transmits credentials in plain text. Use only on trusted networks, or restrict access via the Available From setting.
+
 > **FTP client options:**
-> - **macOS:** Open Terminal and type `ftp 10.10.255.1`, or use [Cyberduck](https://cyberduck.io/) (free)
+> **Recommended tools for macOS users:**
+> - [Transfer](https://www.intuitibits.com/products/transfer/) ($19.99) — runs TFTP, FTP, SFTP, HTTP, and HTTPS servers on your Mac. Built for network admins. Use it when you need your laptop to serve firmware or configs to network gear during initial setup.
+> - [Cyberduck](https://cyberduck.io/) (free) — FTP/SFTP client for uploading files TO the MikroTik, since Finder's FTP is read-only.
+>
+> The MikroTik's built-in TFTP and FTP servers handle the permanent use case — firmware and configs served from the USB drive without needing a laptop connected.> - **macOS:** Open Terminal and type `ftp 10.10.255.1`, or use [Cyberduck](https://cyberduck.io/) (free)
+> 
 > - **Windows:** Open File Explorer and type `ftp://10.10.255.1` in the address bar, or use [WinSCP](https://winscp.net/) (free)
 > - **Browser:** Most modern browsers (Chrome, Edge, Safari) have removed FTP support. Firefox still has limited support but may not work reliably. Use a dedicated FTP client instead.
 
-> **Security note:** FTP transmits credentials in plain text. Use only on trusted networks, or restrict access via the Available From setting.
+> **FTP client tips:**
+> - **Windows:** File Explorer supports FTP natively with full read/write — type `ftp://10.10.255.1` in the address bar and enter credentials when prompted. Drag and drop works in both directions.
+> - **macOS:** Finder's FTP is **read-only** — you can browse and download, but not upload. Use Terminal (`ftp` command), [Cyberduck](https://cyberduck.io/) (free), or any other FTP client for uploading.
+> - **Browser:** Chrome, Edge, and Safari have removed FTP support entirely. Firefox has limited read-only support. Use a dedicated client or your OS file manager instead.
 
 ---
 
