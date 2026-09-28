@@ -94,7 +94,9 @@ For more flexible file transfers, enable the FTP server.
 
 7. Click **New**:
    - **Name:** ftp
-   - **Policies:** ftp, read (add write if uploads needed)
+   - **Policies:** ftp, read, write
+
+> **Why write access?** Without the `write` policy, you can download files from the router but not upload to it. With write enabled, you can FTP files directly to any path on the router — including `usb1/` — without using the WinBox upload-then-drag workflow. This is especially useful for uploading media files, container configs, and firmware images that are too large for internal storage.
 
 8. Click **Apply & OK**
 
@@ -104,7 +106,7 @@ For more flexible file transfers, enable the FTP server.
     - **Name:** ftpuser
     - **Group:** ftp
     - **Password:** [Create a password]
-    - **Confirm PAssword:** [Retype the password]
+    - **Confirm Password:** [Retype the password]
     - **Allowed Address:** (optional — restrict by IP)
 
 11. Click **OK**
