@@ -137,10 +137,12 @@ Guest Wi-Fi )))──► mAP (Wi-Fi client) ──► Main Router (ether)
 
 Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current configuration and reset to defaults.
 
+To do this, the best way is to connect your laptop directly to the mAP **ETH2** port. If you aren't connected to that port, do so at this time.
+
 1. In WinBox, connect to the mAP
 
 2. Navigate to **Files**, then click **Backup** in the right-hand panel
-   - **Name:** mAP-ap-config
+   - **Name:** mAP-preLab24-config
    - Click **Backup**
 
 3. Download the backup file to your computer — select the file and click **Download** in the right-hand panel
@@ -149,7 +151,7 @@ Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current con
    - Leave **No Default Configuration** unchecked — we want factory defaults as our starting point
    - Click **Reset Configuration**
 
-5. The mAP will reboot. Connect your laptop directly to **ether2** on the mAP — after factory reset, ether2 is the LAN port on the default bridge (192.168.88.0/24). Open WinBox and connect to 192.168.88.1
+5. The mAP will reboot. After the factory reset, ether2 is the LAN port on the default bridge (192.168.88.0/24). Open WinBox and connect to 192.168.88.1
 
 > **Note:** After a factory reset, the admin password is blank. If WinBox has a saved password for this device, clear it out before connecting. On first login, RouterOS will prompt you to set a new password — you can set it back to what you had before.
 
@@ -157,11 +159,11 @@ Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current con
 
 #### Create Security Profile for Target Network
 
-1. In WinBox, navigate to **Wireless** → **Security Profiles**
+1. In WinBox, navigate to **Wireless** → **Wireless** and then click on the **Security Profiles** tab.
 
 > **Note:** The mAP shows both **Wireless** and **WiFi** in the menu. Use **Wireless** — the WiFi menu is for newer wifiwave2 devices and does not control the mAP's radio.
 
-2. Click **Add New**:
+2. Click **New**:
    - **Name:** guest-wifi
    - **Mode:** dynamic keys
    - **Authentication Types:** WPA2 PSK
@@ -184,7 +186,7 @@ Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current con
    - **Security Profile:** guest-wifi
    - **Country:** [Your country]
 
-7. Click **Apply** and **OK**
+7. Click **Apply**
 
 8. The interface will attempt to connect. Click the **Status** tab on the interface window — at the bottom of that tab, it should show "connected to ess"
 
@@ -192,7 +194,7 @@ Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current con
 
 9. Navigate to **Bridge**
 
-10. Click **Add New**:
+10. Click **New**:
     - **Name:** br-wan
     - **Comment:** Wi-Fi WAN bridge
 
@@ -209,7 +211,7 @@ Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current con
 
 15. Navigate to **IP** → **DHCP Client**
 
-16. Click **Add New**:
+16. Click **New**:
     - On the **DHCP** tab:
       - **Interface:** br-wan
       - **Add Default Route:** yes
@@ -223,15 +225,15 @@ Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current con
 
 #### Create LAN Bridge (for downstream devices)
 
-19. Navigate to **Bridge**
+19. Navigate to **Bridge** → **Bridge**
 
-20. Click **Add New**:
+20. Click **New**:
     - **Name:** br-lan
     - **Comment:** LAN for downstream
 
-21. Click **OK**
+21. Click **Apply** and **OK**
 
-22. In the **Bridge** window, click the **Ports** tab, then click **Add New**:
+22. In the **Bridge** window, click the **Ports** tab, then click **New**:
     - **Interface:** ether1 (or ether2, depending on your wiring)
     - **Bridge:** br-lan
 
@@ -241,7 +243,7 @@ Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current con
 
 23. Navigate to **IP** → **Addresses**
 
-24. Click **Add New**:
+24. Click **New**:
     - **Address:** 172.16.139.1/24
     - **Interface:** br-lan
     - **Comment:** mAP LAN
@@ -256,32 +258,32 @@ Before reconfiguring the mAP as a Wi-Fi client gateway, back up your current con
     - **Name:** lan-pool
     - **Addresses:** 172.16.139.10-172.16.139.250
 
-28. Click **OK**
+28. Click **Apply** and **OK**
 
 29. Navigate to **IP** → **DHCP Server**
 
-30. Click **Add New**:
+30. Click **New**:
     - **Name:** lan-dhcp
     - **Interface:** br-lan
     - **Address Pool:** lan-pool
     - **Lease Time:** 01:00:00
 
-31. Click **OK**
+31. Click **Apply** and **OK**
 
 32. Click the **Networks** tab
 
-33. Click **Add New**:
+33. Click **New**:
     - **Address:** 172.16.139.0/24
     - **Gateway:** 172.16.139.1
     - **DNS Servers:** 172.16.139.1
 
-34. Click **OK**
+34. Click **Apply** and **OK**
 
 #### Configure NAT (Masquerade)
 
 35. Navigate to **IP** → **Firewall** → **NAT**
 
-36. Click **Add New**:
+36. Click **New**:
     - **Chain:** srcnat
     - **Out. Interface:** br-wan
    - Click the **Action** tab:
@@ -306,7 +308,7 @@ This is the same concept as Lab 24.3 where you used a phone as a second WAN. The
 
 41. Disconnect the mAP's ethernet cable from its current port on your main router
 
-42. Reconnect it to a port that is **not** part of a bridge or VLAN — you need a standalone port. If you completed Lab 24.3, ether3 already has a DHCP client configured and is ready to use
+42. Reconnect it to a port that is **not** part of a bridge or VLAN — you need a standalone port. If you completed Lab 24.3, ether3 already has a DHCP client configured and is ready to use. If not, you can disconnect the WAN connection on Port 1 and plug the mAP in there.
 
 43. If using a port that doesn't have a DHCP client yet, add one:
     - Navigate to **IP** → **DHCP Client**
@@ -335,7 +337,19 @@ This is the same concept as Lab 24.3 where you used a phone as a second WAN. The
 
 - **RoMON won't work:** When wlan1 is in station mode, RoMON cannot use it. You'll need wired access to manage the mAP.
 
-- **Switching back:** To return the mAP to AP mode, change wlan1 mode back to "ap bridge" and reconfigure as needed.
+### Restore mAP Configuration
+
+After testing the Wi-Fi client mode, restore the mAP to its full configuration.
+
+47. On the mAP, navigate to **Files**
+
+48. Upload `mAP-preLab24-config.backup` from your laptop
+
+49. Select the file you just uploaded and then click **Restore** in the right-hand panel
+
+50. The mAP reboots with the complete configuration — AP mode, VLANs, bridges, everything
+
+> **Why not just switch back manually?** Changing wlan1 back to AP mode is one step, but the bridges, bridge ports, DHCP client, and NAT rules from this lab also need to be undone. The binary backup restores everything cleanly in one step.
 
 ---
 
@@ -353,5 +367,3 @@ This is the same concept as Lab 24.3 where you used a phone as a second WAN. The
 
 ---
 
-
----
