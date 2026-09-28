@@ -33,11 +33,13 @@ DLNA allows media players (VLC, Windows Media Player, smart TVs) to discover and
 
 > **Important:** The WinBox file upload drops files into the router's internal storage, not directly to the USB drive. If your media file is larger than the available internal storage (128 MB on most devices), the upload will fail. Use FTP instead (configured in Lab 21.2) to upload directly to `/usb1/media/`, or remove the USB drive and copy files from your computer, then reinsert it.
 
+> **macOS Finder limitation:** Finder's built-in FTP support is read-only — you can browse and download files, but not upload. Use Terminal (`ftp` command) or a dedicated FTP client like [Cyberduck](https://cyberduck.io/) for uploading files to the router.
+
 ### Enable Media Server
 
 > **Important:** When a USB drive is plugged in, MikroTik automatically creates a dynamic media server on the default bridge that exposes the entire USB drive. To prevent this, disable auto-sharing before creating your own entry:
 >
-> Navigate to **System** → **Disks**, select the USB drive, and uncheck **Auto Media Sharing** and **Auto SMB Sharing**. Or via CLI:
+> Navigate to **System** → **Disks**, select the USB drive then select **Settings** in the right hand menu, and uncheck **Auto Media Sharing** and **Auto SMB Sharing**. Or via CLI:
 > ```
 > /disk/settings/set auto-media-sharing=no auto-smb-sharing=no
 > ```
@@ -46,19 +48,17 @@ DLNA allows media players (VLC, Windows Media Player, smart TVs) to discover and
 
 4. Navigate to **IP** → **Media**
 
-5. Click **Add New**:
+5. Click **New**:
    - **Enabled:** ✓ Checked
    - **Interface:** vlan255
    - **Path:** usb1/media/
    - **Friendly Name:** Lab Media Server
 
-6. Click **Apply**
+6. Click **Apply & OK**
 
 7. Verify **Status** shows **running**
 
 > **Tip:** MikroTik's DLNA server does not recognize all media formats. M4V files (Apple's MP4 variant) will not appear — rename them to `.mp4`. Stick to common formats: `.mp4`, `.mp3`, `.avi`, `.mkv`.
-
-8. Click **OK**
 
 ### Play Media on Clients
 
@@ -92,18 +92,16 @@ SMB (Server Message Block) provides file sharing that works with Windows, macOS,
 1. Navigate to **IP** → **SMB**
 
 2. Configure:
-   - **Enabled:** ✓ Checked
+   - **Enabled:** auto
    - **Domain:** WORKGROUP (or your preferred domain)
    - **Comment:** MikroTik File Share
    - **Interfaces:** all (or select specific interfaces)
 
 3. Click **Apply**
 
-4. Verify **Status** shows **enabled**
-
 ### Create SMB Users
 
-5. Click **Users** on the right side of the SMB settings window
+4. Click **Users** on the right side of the SMB settings window
 
 6. The default **guest** user is enabled — select it and click **Disable**
 
@@ -118,7 +116,7 @@ SMB (Server Message Block) provides file sharing that works with Windows, macOS,
 
 9. Click **Shares** on the right side of the SMB settings window
 
-10. Click **Add New**:
+10. Click **New**:
    - **Name:** Lab Media Server
    - **Directory:** /usb1/media
    - **Read Only:** ✓ Checked
