@@ -25,19 +25,19 @@ By default, your MikroTik acts as a DNS server for clients and forwards queries 
 
 ## Lab 27.2 — Static DNS Entries
 
-Create local DNS names for devices on your network. Instead of remembering 10.10.255.50, you can use `server.lab` or `nas.home`.
+Create local DNS names for devices on your network. Instead of remembering `172.17.0.2`, you can use `speedtest.lab`.
 
 ### Add a Static Entry
 
-1. Navigate to **IP** → **DNS** → **Static**
+1. Click on **Static** in the right-hand menu
 
-2. Click **Add New**:
-   - **Name:** server.lab
-   - **Address:** 10.10.255.50
+2. Click **New**:
+   - **Name:** speedtest.lab
+   - **Address:** 172.17.0.2
    - **TTL:** 1d (or leave default)
-   - **Comment:** Lab server
+   - **Comment:** OpenSpeedTest container
 
-3. Click **OK**
+3. Click **Apply** and **OK**
 
 ### Common Static Entries
 
@@ -52,7 +52,7 @@ Create local DNS names for devices on your network. Instead of remembering 10.10
 
 4. From a client on your network, ping the hostname:
    ```
-   ping server.lab
+   ping speedtest.lab
    ```
 
 5. The name should resolve to the IP you configured
@@ -287,26 +287,3 @@ This is "set and forget" with no blocklist management.
 
 **Recommendation for most users:** Configure static entries for your local devices, use Cloudflare or Quad9 as upstream, enable DoH, and force DNS through the router. Skip the adblock lists unless you're prepared to troubleshoot.
 
----
-
-# Lab Notes — Lab 27
-
-| Item | Value |
-|------|-------|
-| Upstream DNS Servers | |
-| DoH Server URL | |
-| Local Domain Suffix | .lab / .home / other: |
-
-**Static DNS Entries:**
-
-| Hostname | IP Address |
-|----------|------------|
-| | |
-| | |
-| | |
-| | |
-
----
-
-*Document Version: Draft 1.0*
-*Last Updated: March 2026*
