@@ -266,7 +266,7 @@ In Lab 6, you learned that RSC exports are plain text scripts you can read, edit
    git diff
    ```
 
-    Git shows exactly which lines were added, removed, or modified — highlighted in green and red.
+ Git shows exactly which lines were added, removed, or modified — highlighted in green and red.
 
 13. Commit the change:
 
@@ -296,11 +296,12 @@ In Lab 6, you learned that RSC exports are plain text scripts you can read, edit
 
 For multiple devices, save each as a separate file:
 
+   ```
    ~/mikrotik-configs/
    ├── main-router.rsc
    ├── mAP.rsc
    └── class-router.rsc
-
+   ```
 
 Each device's config is tracked independently. One repo, all your devices, full history.
 
