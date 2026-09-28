@@ -307,6 +307,123 @@ Each device's config is tracked independently. One repo, all your devices, full 
 
 > **Why this matters:** Six months from now, when something breaks and you can't remember what you changed, `git log` and `git diff` tell you exactly what happened. It's the network equivalent of having a changelog for every config change you've ever made.
 
+---
+
+## Lab 29.10 — Telegram Alerts (Optional)
+
+MikroTik can send alerts directly to your phone via Telegram — no containers, no email servers, no external tools. Combined with Netwatch, your router notifies you the moment something goes down.
+
+### Create a Telegram Bot
+
+1. On your phone, open Telegram and search for **@BotFather**
+
+2. Send `/newbot`
+
+3. Follow the prompts:
+   - **Name:** Give it a display name (e.g., `MikroTik Alerts`)
+   - **Username:** Give it a unique username ending in `bot` (e.g., `mylab_mikrotik_bot`)
+
+4. BotFather replies with your **bot token** — a long string like `123456789:ABCdefGHIjklMNOpqrSTUvwxYZ`. Save this.
+
+### Get Your Chat ID
+
+5. On your phone, search for your new bot in Telegram and send it any message (e.g., `hello`)
+
+6. On your MikroTik, open **New Terminal** and run:
+
+   ```
+   /tool/fetch url="https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates" mode=https output=user as-value
+   ```
+   
+Replace `YOUR_BOT_TOKEN` with the token from step 4.
+
+7. In the output, find `"chat":{"id":` followed by a number. That's your **chat ID**. Save it.
+
+### Test a Message
+
+8. Send a test message from the router:
+
+   ```
+   /tool/fetch url="https://api.telegram.org/botYOUR_BOT_TOKEN/sendMessage\?chat_id=YOUR_CHAT_ID&text=Hello from MikroTik" mode=https output=none
+   ```
+   
+Replace both `YOUR_BOT_TOKEN` and `YOUR_CHAT_ID`.
+
+9. Check your phone — you should have a Telegram message from your bot.
+
+### Create an Alert Script
+
+10. Navigate to **System** → **Scripts**
+
+11. Click **New**:
+    - **Name:** telegram-alert
+    - **Source:**
+      ```
+      :local botToken "YOUR_BOT_TOKEN"
+      :local chatID "YOUR_CHAT_ID"
+      :local identity [/system/identity/get name]
+      :local message ("$identity: $alertMessage")
+      /tool/fetch url="https://api.telegram.org/bot$botToken/sendMessage\?chat_id=$chatID&text=$message" mode=https output=none
+      ```
+      
+12. Click **Apply** and **OK**
+
+### Set Up Netwatch Monitoring
+
+Netwatch pings a host on a schedule and runs scripts when the host goes up or down.
+
+13. Navigate to **Tools** → **Netwatch**
+
+14. Click **New** and configure on the **Host** tab:
+    - **Host:** `8.8.8.8` (monitors internet connectivity)
+    - **Interval:** `00:01:00` (checks every minute)
+
+15. Click the **Up** tab:
+    - **Script:**
+      ```
+      :global alertMessage "Internet connection restored"
+      /system/script/run telegram-alert
+      ```
+      
+16. Click the **Down** tab:
+    - **Script:**
+       ```
+      :global alertMessage "Internet connection DOWN"
+      /system/script/run telegram-alert
+      ```
+       
+17. Click **Apply** and **OK**
+
+### Test It
+
+18. Unplug your WAN cable
+
+19. Wait up to one minute — you should get a "Internet connection DOWN" message on Telegram
+
+20. Plug the cable back in — you should get "Internet connection restored"
+
+### More Monitoring Ideas
+
+Add additional Netwatch entries for anything with an IP:
+Monitor your container host
+
+```
+/tool/netwatch/add host=172.17.0.2 interval=00:01:00
+down-script=":global alertMessage "OpenSpeedTest container DOWN"; /system/script/run telegram-alert"
+up-script=":global alertMessage "OpenSpeedTest container restored"; /system/script/run telegram-alert"
+```
+
+Monitor your mAP
+
+```
+/tool/netwatch/add host=10.10.255.249 interval=00:01:00
+down-script=":global alertMessage "mAP unreachable"; /system/script/run telegram-alert"
+up-script=":global alertMessage "mAP back online"; /system/script/run telegram-alert"
+```
+
+> **This replaces email.** Lab 15 mentioned email notifications via scripting — Telegram is faster, easier to set up, and doesn't require an SMTP server. Your phone buzzes the moment something breaks.
+
+
 ## Lab 29 Summary
 
 | Task | Location |
@@ -319,5 +436,6 @@ Each device's config is tracked independently. One repo, all your devices, full 
 | Scheduled tasks | System → Scheduler |
 | View logs | Log |
 | Track changes | Using Git |
+| Monitor system | Using Telegram and the botFather |
 
 ---
