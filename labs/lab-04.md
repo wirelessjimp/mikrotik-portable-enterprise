@@ -152,6 +152,8 @@ Now that HTTPS is confirmed working via the backdoor:
 
 To test, you must connect from a network on the WAN side of your router — not plugged directly into the router's LAN ports.
 
+> **Class connection change:** Temporarily disconnect from the L009 backdoor port and connect to the class Wi-Fi (SSID and password on the board) to verify WAN access. Once confirmed, switch back to the L009 backdoor port for the remaining labs.
+
 1. Disconnect any wired connection between your laptop and the MikroTik's LAN ports (keep the WAN connected to your upstream network).
 
 2. Connect your laptop to your home Wi-Fi (or any network that connects through the MikroTik's WAN port).
