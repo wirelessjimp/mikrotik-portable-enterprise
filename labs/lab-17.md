@@ -107,8 +107,17 @@ Keep both sessions open throughout this lab.
 > - Check that your main router's firewall allows UDP 51820 inbound (Lab 12.3)
 > - If the mAP is on the same network as the main router, NAT hairpinning may prevent the tunnel from forming — test with the mAP on a separate internet connection
 
----
-
+> **Class connection change:** Now that your WireGuard tunnel is verified, it's time to prove it works across networks. Unplug the mAP's jumper from the L009 ether8. Plug the mAP into your second Ethernet cable (the black 25' cable going to the class switch). 
+>
+> Watch what happens:
+> 1. The tunnel re-establishes automatically — the mAP is on a different subnet but WireGuard doesn't care
+> 2. If you test RADIUS, it breaks — the mAP's RADIUS packets now come from the WireGuard IP (10.255.255.x) instead of the trunk IP
+> 3. Fix it by adding the WireGuard subnet as a RADIUS client on the L009:
+> ```
+> /tool/user-manager/router/add address=10.255.255.0/24 shared-secret=yourradiussecret name=wireguard-clients
+> ```
+>
+> Three lessons in one cable move: WireGuard portability, RADIUS source addressing, and why network architecture decisions matter.
 
 ---
 
