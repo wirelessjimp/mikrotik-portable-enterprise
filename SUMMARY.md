@@ -40,3 +40,5 @@
 * [Appendix B — Reset Procedures](labs/appendix-b.md)
 * [Appendix C — Additional MikroTik Capabilities](labs/appendix-c.md)
 * [Appendix D — Network Diagrams](labs/appendix-d.md)
+* [Lab Notes](labs/lab-notes.md)
+  
