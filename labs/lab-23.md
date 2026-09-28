@@ -49,6 +49,8 @@ Configure the router to sync time from public NTP servers.
 
 4. Watch the **Status** field — it should change to **synchronized**
 
+> **Note:** The first synchronization can take up to 30 seconds, so be patient.
+
 ### View NTP Peers
 
 5. Click **Peers** on the right side
