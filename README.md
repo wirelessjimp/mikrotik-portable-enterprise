@@ -79,6 +79,8 @@ Static entries, DNS over HTTPS, and ad blocking.
 **Lab 29 — Administrative Tasks**
 Router identity, passwords, software upgrades, user management, scheduled tasks, and logging.
 
+> **Note:** Any sub-lab numbered X.9 (e.g., Lab 5.9, Lab 29.9) is optional or reference material. These cover advanced topics, alternative approaches, or background information that isn't required to complete the core build.
+
 ## Quick Start
 
 1. Get a MikroTik L009/RB5009/hEX S (or any RouterOS v7 device)
