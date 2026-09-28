@@ -350,6 +350,8 @@ aaa authentication-server radius "MikroTik"
 
 ### Test EAP-PEAP (Username/Password)
 
+> **Class connection change:** Disconnect your laptop from the L009 backdoor port. Connect to the mAP's Wi-Fi SSID to test RADIUS authentication. After testing, reconnect to the L009 backdoor port.
+
 1. On a test device (phone or laptop), connect to your WPA2-Enterprise SSID.
 
 2. When prompted:
