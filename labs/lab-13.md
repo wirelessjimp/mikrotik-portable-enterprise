@@ -30,6 +30,8 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 
    > **Power:** The mAP can be powered via PoE from the router (if your router supports PoE-out - both the L009, hEX S, and RB5009 do), USB, or the included adapter. For this lab, any power source works.
 
+   > **Class connection change:** Plug your mAP into the L009's ether8 (PoE out) port using the 6" green jumper cable. The mAP gets power and a network connection from this port. Keep your laptop connected to the L009 backdoor port.
+
 2. Wait for the mAP to boot — the PWR light will go solid green.
 
 ### Connect via WinBox
