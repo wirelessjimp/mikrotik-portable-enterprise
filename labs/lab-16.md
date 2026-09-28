@@ -66,6 +66,6 @@ You now have:
 
 The Cloud tab is intentionally simple — MikroTik keeps these services lightweight and free. The real value was already captured when you set up DDNS and BTH VPN.
 
-> **Email Notifications:** MikroTik supports sending email alerts via scripting and Netwatch. This is covered in a later lab alongside other automation and alerting topics.
+> **Email Notifications:** MikroTik supports sending alerts via scripting and Netwatch. See Lab 29.10 — Telegram Alerts for a practical implementation that sends push notifications to your phone.
 
 ---
