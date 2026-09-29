@@ -9,3 +9,10 @@ site:
       default: true
       content:
         directory: ./
+    - type: space
+      key: space-1
+      title: Enterprise Networking Class Guide
+      path: class-guide
+      draft: true
+      content:
+        directory: null
