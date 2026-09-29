@@ -6,13 +6,13 @@ site:
       key: labs
       title: Lab Guide
       path: .
-      default: true
       content:
         directory: ./
     - type: space
       key: space-1
       title: Enterprise Networking Class Guide
       path: class-guide
+      default: true
       draft: true
       content:
         directory: null
