@@ -407,6 +407,65 @@ The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll 
 
 ---
 
+Lab 11.6 — Testing Authentication
+Test EAP-PEAP (Username/Password)
+Class connection change: Disconnect your laptop from the L009 backdoor port. Connect to the mAP's Wi-Fi SSID to test RADIUS authentication. After testing, reconnect to the L009 backdoor port.
+
+On a test device (phone or laptop), connect to your WPA2-Enterprise SSID.
+
+When prompted:
+
+EAP Method: PEAP
+Phase 2 Authentication: MSCHAPv2
+Identity: user2@mikrotik.test
+Password: [the password you created in Lab 11.3]
+CA Certificate: Do not validate (for lab testing) or install the CA cert
+The device should authenticate and receive an IP address.
+
+Test EAP-TLS (Certificate)
+For EAP-TLS, you need to export and install the client certificate on your test device. The MikroTik app makes this much easier than manual file transfer.
+
+Using the MikroTik App (Recommended for phones/tablets):
+
+Install the MikroTik app on your phone (available for iOS and Android).
+
+Connect to your router through the app.
+
+Navigate to System → Certificates
+
+Select the client certificate (user1-client)
+
+Export the certificate — the app handles the transfer and installation directly to your device's certificate store.
+
+Connect to the WPA2-Enterprise SSID and select the installed certificate.
+
+Manual Export (for laptops or devices without the app):
+
+Navigate to System → Certificates
+
+Select the client certificate (user1-client)
+
+Click Export
+
+Configure:
+
+Type: PKCS12
+Export Passphrase: [create a passphrase]
+Click Export
+
+Navigate to Files and download the .p12 file.
+
+Transfer the .p12 file to your device and install it.
+
+Connect to the WPA2-Enterprise SSID using the certificate.
+
+Verify in User Manager
+Navigate to User Manager → Sessions
+
+You should see active sessions for authenticated users.
+
+Navigate to User Manager → Users and click on a user to see their session history.
+
 ## Lab 13.6 — Backup mAP Configuration
 
 Before proceeding, back up the mAP configuration.
