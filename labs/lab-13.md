@@ -452,7 +452,7 @@ The mAP needs to know where to send RADIUS authentication requests.
    - **Name:** wlan3
    - **Mode:** ap bridge
    - **Master Interface:** wlan1
-   - **SSID:** MikroTik-Enterprise
+   - **SSID:** Student#-Enterprise
    - **Security Profile:** enterprise-security
 
 10. Click **Apply** and then **OK**
@@ -509,7 +509,7 @@ For EAP-TLS, you need to export and install the client certificate on your test 
 
 8. Export the certificate — the app handles the transfer and installation directly to your device's certificate store.
 
-9. Connect to the **MikroTik-Enterprise** SSID and select the installed certificate.
+9. Connect to the **Student#-Enterprise** SSID and select the installed certificate.
 
 **Manual Export (for laptops or devices without the app):**
 
@@ -529,7 +529,7 @@ For EAP-TLS, you need to export and install the client certificate on your test 
 
 16. Transfer the .p12 file to your device and install it.
 
-17. Connect to the **MikroTik-Enterprise** SSID using the certificate.
+17. Connect to the **Student#-Enterprise** SSID using the certificate.
 
 ### Verify in User Manager
 
