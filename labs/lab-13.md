@@ -260,7 +260,7 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 Now we configure the mAP to get internet from whatever network it's plugged into, and carry tagged VLANs back to your main router when connected via trunk.
 
-> **Class connection change:** Move your laptop's ethernet cable back to the L009 backdoor port. From this point forward, you'll manage the mAP over the network, not by direct cable.
+> **Class connection change:** Move your laptop's ethernet cable back to the L009 backdoor port. To continue managing the mAP, connect your laptop to the **mAP-Fallback** Wi-Fi (SSID and password from Lab 13.3). You'll now have two connections: wired to the L009 (192.168.88.x) and Wi-Fi to the mAP (192.168.89.x). Open WinBox to both — 192.168.88.1 for the L009, 192.168.89.1 for the mAP.
 
 ![Step 5](images/step-5.png)
 
