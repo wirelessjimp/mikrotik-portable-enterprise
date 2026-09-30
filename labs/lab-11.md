@@ -348,66 +348,7 @@ aaa authentication-server radius "MikroTik"
 
 ## Lab 11.6 — Testing Authentication
 
-### Test EAP-PEAP (Username/Password)
-
-> **Class connection change:** Disconnect your laptop from the L009 backdoor port. Connect to the mAP's Wi-Fi SSID to test RADIUS authentication. After testing, reconnect to the L009 backdoor port.
-
-1. On a test device (phone or laptop), connect to your WPA2-Enterprise SSID.
-
-2. When prompted:
-   - **EAP Method:** PEAP
-   - **Phase 2 Authentication:** MSCHAPv2
-   - **Identity:** user2@mikrotik.test
-   - **Password:** [the password you created in Lab 11.3]
-   - **CA Certificate:** Do not validate (for lab testing) or install the CA cert
-
-3. The device should authenticate and receive an IP address.
-
-### Test EAP-TLS (Certificate)
-
-For EAP-TLS, you need to export and install the client certificate on your test device. The MikroTik app makes this much easier than manual file transfer.
-
-**Using the MikroTik App (Recommended for phones/tablets):**
-
-1. Install the MikroTik app on your phone (available for iOS and Android).
-
-2. Connect to your router through the app.
-
-3. Navigate to **System** → **Certificates**
-
-4. Select the client certificate (user1-client)
-
-5. Export the certificate — the app handles the transfer and installation directly to your device's certificate store.
-
-6. Connect to the WPA2-Enterprise SSID and select the installed certificate.
-
-**Manual Export (for laptops or devices without the app):**
-
-1. Navigate to **System** → **Certificates**
-
-2. Select the client certificate (user1-client)
-
-3. Click **Export**
-
-4. Configure:
-   - **Type:** PKCS12
-   - **Export Passphrase:** [create a passphrase]
-
-5. Click **Export**
-
-6. Navigate to **Files** and download the .p12 file.
-
-7. Transfer the .p12 file to your device and install it.
-
-8. Connect to the WPA2-Enterprise SSID using the certificate.
-
-### Verify in User Manager
-
-1. Navigate to **User Manager** → **Sessions**
-
-2. You should see active sessions for authenticated users.
-
-3. Navigate to **User Manager** → **Users** and click on a user to see their session history.
+> **Class note:** RADIUS testing requires the mAP, which you haven't set up yet. You'll configure an Enterprise SSID and test RADIUS authentication in Lab 13.7. Hold tight.
 
 ---
 
