@@ -212,8 +212,8 @@ User Manager needs to know which devices are allowed to send RADIUS requests. Ea
 5. In the **Routers** tab, click **New**
 
 6. Configure:
-   - **Name:** *make-model* (use a descriptive name like "ruckus-r770" or "aruba-ap22") [mikrotik-ap]
-   - **Address:** (IP address of your AP on the management VLAN) [10.22.255.0/24]
+   - **Name:** *make-model* (use a descriptive name like "ruckus-r770" or "mist-ap47") [mikrotik-ap]
+   - **Address:** (IP address of your AP on the management VLAN) [10.10.255.0/24]
    - **Shared Secret:** [create a strong shared secret — you'll need this when configuring the AP]
 
    > **Example:** If your AP will get 10.10.255.x from DHCP, use that address. For testing, you can use 10.10.255.0/24 to allow any device on that subnet, but specific IPs are more secure.
