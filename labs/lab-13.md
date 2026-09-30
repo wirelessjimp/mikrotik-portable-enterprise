@@ -4,11 +4,7 @@
 
 This lab sets up the mAP as a managed AP extension of your network. We'll configure it with a fallback emergency access method, connect it to your main router's trunk port, and set up management Wi-Fi.
 
-*Prerequisites: Lab 7 (trunk ports configured), Lab 12 (WireGuard server), Lab 6 (backup completed)*
-
-This lab builds out a second MikroTik device as a portable, fully-featured extension of your network. When complete, you'll have a device you can take anywhere — plug it into any network with internet access and it tunnels home, giving you secure access to your lab.
-
-We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and has Wi-Fi built in. The same process works for any RouterOS device — if you want more power, the hAP ac² hAP ax² are solid upgrades with better Wi-Fi and more RAM, but a little larger.
+We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and has Wi-Fi built in. The same process works for any RouterOS device — if you want more power, the hAP ax² is a solid upgrade with better Wi-Fi and more RAM, but a little larger.
 
 ### What We're Building
 
@@ -16,13 +12,13 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 |---------|---------|
 | Fallback config | Emergency access when not connected to main router |
 | Trunk connection | Carry all VLANs back to main router |
-| WireGuard tunnel | Secure connection home from anywhere |
-| RoMON | Manage both devices from one connection |
 | Management Wi-Fi | Wireless access to the network on VLAN 255 |
 
 ---
 
 ## Lab 13.1 — Initial mAP Access via WinBox
+
+![Step 3](images/step-3.png)
 
 ### Physical Connection
 
@@ -37,6 +33,8 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 ### Connect via WinBox
 
 3. Move your laptop's ethernet cable from the main router to **ether2** on the mAP. This gives you direct Layer 2 access to the mAP so WinBox can discover it.
+
+![Step 4](images/step-4.png)
 
 4. Open WinBox on your computer.
 
@@ -84,9 +82,6 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 
 ---
 
-
----
-
 ## Lab 13.2 — Reset to Blank Configuration
 
 The mAP ships with a default configuration designed for "plug and play home router" use — NAT, DHCP server, firewall rules, bridged ports. That's the opposite of what we need (a trunk endpoint with no local NAT or DHCP).
@@ -120,9 +115,6 @@ We'll wipe everything and build exactly what we need from scratch.
 8. You'll be prompted to set a password. Set one and record it in your lab notes.
 
 > **Why MAC address still works:** Even with a blank configuration, WinBox can discover and connect to MikroTik devices by MAC address over Layer 2. No IP address or DHCP required.
-
----
-
 
 ---
 
@@ -263,12 +255,11 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 ---
 
-
----
-
 ## Lab 13.4 — Configure WAN and Trunk Connection
 
 Now we configure the mAP to get internet from whatever network it's plugged into, and carry tagged VLANs back to your main router when connected via trunk.
+
+![Step 5](images/step-5.png)
 
 > **All steps in Lab 14.4 are performed on the mAP.** Your main router is already configured from Labs 7-10. Make sure your WinBox session is connected to the mAP (192.168.89.1 or by MAC address), not your main router.
 
@@ -362,9 +353,6 @@ The mAP uses ether1 for everything upstream:
 
 ---
 
-
----
-
 ## Lab 13.5 — Configure Management Wi-Fi on VLAN 255
 
 The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll add a second SSID that puts clients on the management VLAN (255), giving them access to the full network when the mAP is connected to the main router.
@@ -416,9 +404,6 @@ The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll 
 13. You should receive an IP address in the **10.10.255.x** subnet (from the main router's DHCP server for VLAN 255).
 
 14. Verify you can access **10.10.255.1** (main router). You should also be able to reach the mAP at whatever IP it received from the DHCP server.
-
----
-
 
 ---
 
