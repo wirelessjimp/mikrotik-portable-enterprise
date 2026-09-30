@@ -2,7 +2,7 @@
 
 *Prerequisites: Lab 7 (trunk ports configured), Lab 6 (backup completed)*
 
-This lab sets up the mAP as a managed AP extension of your network. We'll configure it with a fallback emergency access method, connect it to your main router's trunk port, and set up management Wi-Fi.
+This lab sets up the mAP as a managed AP extension of your network. We'll configure it with a fallback emergency access method, connect it to your main router's trunk port, set up management Wi-Fi, create an Enterprise SSID for RADIUS testing, and verify the authentication setup from Lab 11.
 
 We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and has Wi-Fi built in. The same process works for any RouterOS device — if you want more power, the hAP ax² is a solid upgrade with better Wi-Fi and more RAM, but a little larger.
 
@@ -13,6 +13,7 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 | Fallback config | Emergency access when not connected to main router |
 | Trunk connection | Carry all VLANs back to main router |
 | Management Wi-Fi | Wireless access to the network on VLAN 255 |
+| Enterprise Wi-Fi | WPA2-Enterprise SSID for RADIUS authentication testing |
 
 ---
 
@@ -24,7 +25,7 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 
 1. Connect the mAP's ETH1 port to your main router's expansion port (ether5 on 5-port devices, ether8 on 8-port devices).
 
-   > **Power:** The mAP can be powered via PoE from the router (if your router supports PoE-out - both the L009, hEX S, and RB5009 do), USB, or the included adapter. For this lab, any power source works.
+   > **Power:** The mAP can be powered via PoE from the router (if your router supports PoE-out — both the L009, hEX S, and RB5009 do), USB, or the included adapter. For this lab, any power source works.
 
    > **Class connection change:** Plug your mAP into the L009's ether8 (PoE out) port using the 6" jumper cable. The mAP gets power and a network connection from this port. Keep your laptop connected to the L009 backdoor port.
 
@@ -259,16 +260,17 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 Now we configure the mAP to get internet from whatever network it's plugged into, and carry tagged VLANs back to your main router when connected via trunk.
 
+> **Class connection change:** Move your laptop's ethernet cable back to the L009 backdoor port. From this point forward, you'll manage the mAP over the network, not by direct cable.
+
 ![Step 5](images/step-5.png)
 
-> **All steps in Lab 14.4 are performed on the mAP.** Your main router is already configured from Labs 7-10. Make sure your WinBox session is connected to the mAP (192.168.89.1 or by MAC address), not your main router.
+> **All steps in Lab 13.4 are performed on the mAP.** Your main router is already configured from Labs 7-10. Make sure your WinBox session is connected to the mAP (192.168.89.1 or by MAC address), not your main router.
 
 ### The Design
 
 The mAP uses ether1 for everything upstream:
 - When plugged into your main router's trunk port (ether8/5), it gets a management IP from the VLAN 255 DHCP server and carries tagged VLANs 20/30/40
 - When plugged into any other network (hotel, coffee shop, client site), it gets a WAN IP via DHCP from that network
-- A WireGuard tunnel (Lab 13.5) handles secure connectivity back to your lab in travel mode
 
 ### Create VLAN Interfaces
 
@@ -329,7 +331,7 @@ The mAP uses ether1 for everything upstream:
 
 ### Configure DNS
 
-> **⚑ Flag:** If internet access isn't working after completing Lab 14.4, come back and verify this step first — DNS is a common culprit.
+> **⚑ Flag:** If internet access isn't working after completing Lab 13.4, come back and verify this step first — DNS is a common culprit.
 
 15. Navigate to **IP** → **DNS**
 
@@ -397,7 +399,7 @@ The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll 
 
 ### Test Management Wi-Fi
 
-11. On your laptop or phone, look for the **Student[*]** SSID you created in step 6 above.
+11. On your laptop or phone, look for the **Student[#]** SSID you created in step 6 above.
 
 12. Connect using the password you created.
 
@@ -407,66 +409,141 @@ The fallback Wi-Fi (mAP-Fallback) is for emergency standalone access. Now we'll 
 
 ---
 
-Lab 11.6 — Testing Authentication
-Test EAP-PEAP (Username/Password)
-Class connection change: Disconnect your laptop from the L009 backdoor port. Connect to the mAP's Wi-Fi SSID to test RADIUS authentication. After testing, reconnect to the L009 backdoor port.
+## Lab 13.6 — Configure Enterprise Wi-Fi (WPA2-Enterprise)
 
-On a test device (phone or laptop), connect to your WPA2-Enterprise SSID.
+Now we'll add a third SSID configured for WPA2-Enterprise authentication. This SSID uses the RADIUS server (User Manager) you configured in Lab 11 instead of a pre-shared key.
 
-When prompted:
+### Create Enterprise Wi-Fi Security Profile
 
-EAP Method: PEAP
-Phase 2 Authentication: MSCHAPv2
-Identity: user2@mikrotik.test
-Password: [the password you created in Lab 11.3]
-CA Certificate: Do not validate (for lab testing) or install the CA cert
-The device should authenticate and receive an IP address.
+1. Navigate to **Wireless** → **Wireless** → **Security Profiles**
 
-Test EAP-TLS (Certificate)
+2. Click **New**:
+   - **Name:** enterprise-security
+   - **Mode:** dynamic keys
+   - **Authentication Types:** WPA2 EAP
+   - **EAP Methods:** passthrough
+   - **RADIUS EAP Accounting:** ✓ Checked (optional)
+
+3. Click **Apply** and then **OK**
+
+### Configure RADIUS Client on mAP
+
+The mAP needs to know where to send RADIUS authentication requests.
+
+4. Navigate to **RADIUS**
+
+5. Click **New**:
+   - **Service:** wireless
+   - **Address:** 10.10.255.1 (your main router's VLAN 255 IP)
+   - **Secret:** [the same shared secret from Lab 11.3]
+   - **Authentication Port:** 1812
+   - **Accounting Port:** 1813
+   - **Comment:** Main router User Manager
+
+6. Click **Apply** and then **OK**
+
+### Create Virtual AP for Enterprise
+
+7. Navigate to **Wireless** → **WiFi Interfaces**
+
+8. Click **New** → **Virtual**
+
+9. Configure:
+   - **Name:** wlan3
+   - **Mode:** ap bridge
+   - **Master Interface:** wlan1
+   - **SSID:** MikroTik-Enterprise
+   - **Security Profile:** enterprise-security
+
+10. Click **Apply** and then **OK**
+
+### Add Enterprise SSID to Management Bridge
+
+11. Navigate to **Bridge** → **Ports**
+
+12. Click **New**:
+    - **Interface:** wlan3
+    - **Bridge:** br-mgmt
+    - **Comment:** Enterprise Wi-Fi (RADIUS)
+
+13. Click **Apply** and then **OK**
+
+> **Why br-mgmt?** The mAP forwards the RADIUS packets to your main router over the trunk. The authenticated client gets an IP on VLAN 255 from the main router's DHCP server — the same as the management SSID, but authenticated with enterprise credentials instead of a PSK.
+
+---
+
+## Lab 13.7 — Test RADIUS Authentication
+
+Now that the mAP has an Enterprise SSID, it's time to test the RADIUS setup you built in Lab 11.
+
+> **Class connection change:** Disconnect your laptop from the L009 backdoor port. Connect to the mAP's Enterprise Wi-Fi SSID to test RADIUS authentication. After testing, reconnect to the L009 backdoor port.
+
+![Step 6](images/step-6.png)
+
+### Test EAP-PEAP (Username/Password)
+
+1. On a test device (phone or laptop), connect to the **MikroTik-Enterprise** SSID.
+
+2. When prompted:
+   - **EAP Method:** PEAP
+   - **Phase 2 Authentication:** MSCHAPv2
+   - **Identity:** user2@mikrotik.test
+   - **Password:** [the password you created in Lab 11.3]
+   - **CA Certificate:** Do not validate (for lab testing) or install the CA cert
+
+3. The device should authenticate and receive an IP address in the **10.10.255.x** range.
+
+### Test EAP-TLS (Certificate)
+
 For EAP-TLS, you need to export and install the client certificate on your test device. The MikroTik app makes this much easier than manual file transfer.
 
-Using the MikroTik App (Recommended for phones/tablets):
+**Using the MikroTik App (Recommended for phones/tablets):**
 
-Install the MikroTik app on your phone (available for iOS and Android).
+4. Install the MikroTik app on your phone (available for iOS and Android).
 
-Connect to your router through the app.
+5. Connect to your main router through the app.
 
-Navigate to System → Certificates
+6. Navigate to **System** → **Certificates**
 
-Select the client certificate (user1-client)
+7. Select the client certificate (user1-client)
 
-Export the certificate — the app handles the transfer and installation directly to your device's certificate store.
+8. Export the certificate — the app handles the transfer and installation directly to your device's certificate store.
 
-Connect to the WPA2-Enterprise SSID and select the installed certificate.
+9. Connect to the **MikroTik-Enterprise** SSID and select the installed certificate.
 
-Manual Export (for laptops or devices without the app):
+**Manual Export (for laptops or devices without the app):**
 
-Navigate to System → Certificates
+10. On your main router, navigate to **System** → **Certificates**
 
-Select the client certificate (user1-client)
+11. Select the client certificate (user1-client)
 
-Click Export
+12. Click **Export**
 
-Configure:
+13. Configure:
+    - **Type:** PKCS12
+    - **Export Passphrase:** [create a passphrase]
 
-Type: PKCS12
-Export Passphrase: [create a passphrase]
-Click Export
+14. Click **Export**
 
-Navigate to Files and download the .p12 file.
+15. Navigate to **Files** and download the .p12 file.
 
-Transfer the .p12 file to your device and install it.
+16. Transfer the .p12 file to your device and install it.
 
-Connect to the WPA2-Enterprise SSID using the certificate.
+17. Connect to the **MikroTik-Enterprise** SSID using the certificate.
 
-Verify in User Manager
-Navigate to User Manager → Sessions
+### Verify in User Manager
 
-You should see active sessions for authenticated users.
+18. On your main router, navigate to **User Manager** → **Sessions**
 
-Navigate to User Manager → Users and click on a user to see their session history.
+19. You should see active sessions for authenticated users.
 
-## Lab 13.6 — Backup mAP Configuration
+20. Navigate to **User Manager** → **Users** and click on a user to see their session history.
+
+> **What just happened:** Your phone authenticated to a Wi-Fi network using enterprise credentials. The mAP forwarded the RADIUS request over the trunk to your main router's User Manager, which validated the credentials and told the mAP to grant access. This is the same architecture used in corporate networks with thousands of users — you just built it on two devices that fit in your pocket.
+
+---
+
+## Lab 13.8 — Backup mAP Configuration
 
 Before proceeding, back up the mAP configuration.
 
@@ -501,11 +578,12 @@ Before proceeding, back up the mAP configuration.
 
 ---
 
-
 ## Lab 13 Summary
 
-At the end of Lab 14, you have:
+At the end of Lab 13, you have:
 - mAP accessible via fallback Wi-Fi for emergency management
 - mAP connected to your main router's trunk port
 - Management Wi-Fi on VLAN 255
+- Enterprise Wi-Fi (WPA2-Enterprise) with RADIUS authentication
+- RADIUS authentication verified (EAP-PEAP and EAP-TLS)
 - Full backup of the mAP configuration
