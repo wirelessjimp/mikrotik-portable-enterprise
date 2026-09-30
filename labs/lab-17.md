@@ -107,6 +107,8 @@ Keep both sessions open throughout this lab.
 > - Check that your main router's firewall allows UDP 51820 inbound (Lab 12.3)
 > - If the mAP is on the same network as the main router, NAT hairpinning may prevent the tunnel from forming — test with the mAP on a separate internet connection
 
+![Step 7](images/step-7.png)
+
 > **Class connection change:** Now that your WireGuard tunnel is verified, it's time to prove it works across networks. Unplug the mAP's jumper from the L009 ether8. Plug the mAP into your second Ethernet cable (the black 25' cable going to the class switch). 
 >
 > Watch what happens:
