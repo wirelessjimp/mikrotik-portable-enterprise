@@ -41,6 +41,7 @@ This lab establishes baseline configuration on a factory-fresh MikroTik router (
 > **IMPORTANT:** Ensure your router identity and password have been changed from defaults before proceeding.
 
 ---
+<img width="849" height="441" alt="Screenshot 2026-09-30 at 12 19 18 PM" src="https://github.com/user-attachments/assets/48ea09bb-ab85-4b87-aabb-8a538d49af9f" />
 
 ## 1.3 — WAN Connection
 
