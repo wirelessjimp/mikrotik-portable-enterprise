@@ -43,6 +43,8 @@ We're using the mAP 2nd for this lab. It's small, cheap, runs on USB power, and 
 
 6. You should see the mAP listed (it will show its MAC address and possibly an IP in 192.168.88.x).
 
+> ⚠️ **Read carefully.** If you get stuck here, re-read the steps above. The answer is in the instructions.
+
 7. Click on the mAP's **MAC address** to select it.
 
    > **Important:** Select the MAC address, not the IP address. At this stage the mAP may not have an IP on your subnet, and connecting by MAC ensures WinBox can reach it regardless.
@@ -115,6 +117,8 @@ We'll wipe everything and build exactly what we need from scratch.
 
 8. You'll be prompted to set a password. Set one and record it in your lab notes.
 
+> ⚠️ **Read carefully.** If you get stuck here, re-read the steps above. The answer is in the instructions.
+
 > **Why MAC address still works:** Even with a blank configuration, WinBox can discover and connect to MikroTik devices by MAC address over Layer 2. No IP address or DHCP required.
 
 ---
@@ -148,7 +152,9 @@ We'll use 192.168.89.0/27 for this fallback network — similar to the default 1
 
 7. Click **Apply** and then **OK**
 
-   > **Note:** Adding ether2 to the bridge will cause your WinBox session to disconnect. Auto-reconnect will not work here — close the WinBox window and open a fresh session, connecting by MAC address with your updated password.
+> **Note:** Adding ether2 to the bridge will cause your WinBox session to disconnect. Auto-reconnect will not work here — close the WinBox window and open a fresh session, connecting by MAC address with your updated password.
+
+> ⚠️ **Read carefully.** If you get stuck here, re-read the steps above. The answer is in the instructions.
 
 ### Configure Fallback IP Address
 
@@ -265,6 +271,8 @@ Now we configure the mAP to get internet from whatever network it's plugged into
 ![Step 5](images/step-5.png)
 
 > **All steps in Lab 13.4 are performed on the mAP.** Your main router is already configured from Labs 7-10. Make sure your WinBox session is connected to the mAP (192.168.89.1 or by MAC address), not your main router.
+
+> ⚠️ **Read carefully.** If you get stuck here, re-read the steps above. The answer is in the instructions.
 
 ### The Design
 
