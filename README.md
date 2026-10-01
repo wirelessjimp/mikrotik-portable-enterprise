@@ -5,6 +5,8 @@
 Build a portable enterprise test network for under $200. This guide walks you through configuring MikroTik RouterOS to create a multi-VLAN lab environment with DHCP, firewall isolation, WireGuard VPN, RADIUS authentication, containerized services, and more — using hardware you can throw in a backpack.
 
 ---
+> Found an issue? [Open a ticket](https://github.com/wirelessjimp/mikrotik-portable-enterprise/issues/new/choose)
+---
 
 ## Who This Is For
 
