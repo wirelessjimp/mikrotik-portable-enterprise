@@ -82,6 +82,8 @@ RouterOS requires a Certificate Authority (CA) before you can sign other certifi
 
 13. Under **Actions** on the right, click **Sign**
 
+> ⚠️ **Read carefully.** If you get stuck here, re-read the steps. The answer is in the instructions.
+
 14. In the Sign dialog:
     - **CA:** Select `local-ca` from the dropdown
     - Click **Start**
