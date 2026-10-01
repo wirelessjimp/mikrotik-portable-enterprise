@@ -46,7 +46,7 @@ The simplest way to connect a mobile device is via QR code using the MikroTik ap
 
 3. Install the **MikroTik Back To Home** app on your phone or tablet (iOS App Store or Google Play).
    
-   <img width="102" height="96" alt="image" src="https://github.com/user-attachments/assets/a98b63d0-ffef-472e-93a1-a1ce6c5b5112" />
+   ![MikroTik Back To Home app](images/mikrotik-bth-app.png)
 
 5. Open the app and tap **Join shared** --> **Scan QR code**.
 
