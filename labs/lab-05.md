@@ -330,6 +330,8 @@ http {
 
 8. In WinBox Files, click **Upload** under Actions.
 
+> ⚠️ **Read carefully.** If you get stuck here, re-read the steps above. The answer is in the instructions.
+
 9. Select your `nginx.conf` file. It will upload to the root of the file system, not the folder you're viewing.
 
 10. Drag the `nginx.conf` file from the root into the `usb1/nginx-conf/` folder.
@@ -408,6 +410,8 @@ http {
 21. Open a browser and navigate to: **http://172.17.0.4**
 
 22. You should see your sample page.
+
+> ⚠️ **Read carefully.** If you get stuck here, re-read the steps above. The answer is in the instructions.
 
 > **Troubleshooting:** If you get a 403 Forbidden error, verify the `nginx.conf` file is in `usb1/nginx-conf/` and contains `user root;` on the first line.
 
