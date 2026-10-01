@@ -44,8 +44,6 @@ Keep both sessions open throughout this lab.
 
 5. Copy the **Public Key** field and record it in your lab notes — you'll need it in step 13.
 
-   > **mAP WireGuard Public Key:** ________________________________
-
 ### Configure WireGuard IP
 
 6. Navigate to **IP** → **Addresses**
@@ -120,6 +118,8 @@ Keep both sessions open throughout this lab.
 > ```
 >
 > Three lessons in one cable move: WireGuard portability, RADIUS source addressing, and why network architecture decisions matter.
+
+> ⚠️ **Read carefully.** If you get stuck here, re-read the steps above. The answer is in the instructions.
 
 ---
 
