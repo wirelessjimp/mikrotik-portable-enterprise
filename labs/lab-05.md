@@ -2,7 +2,8 @@
 
 *Prerequisites: Lab 1, Lab 2 (container package installed, USB formatted), Lab 3 (device mode set to advanced)*
 
-> **WinBox Tip:** As you work through the labs, you'll open multiple windows (Interfaces, Bridge, IP, etc.). WinBox keeps these open in the background even when you navigate elsewhere. Click the window icon in the top bar (next to Workspace) to see all open windows and switch between them, instead of reopening from the left-hand menu each time.<img width="309" height="36" alt="image" src="https://github.com/user-attachments/assets/6f3fad6e-441b-49bb-a326-3f1d8f1e59e7" />
+> **WinBox Tip:** As you work through the labs, you'll open multiple windows (Interfaces, Bridge, IP, etc.). WinBox keeps these open in the background even when you navigate elsewhere. Click the window icon in the top bar (next to Workspace) to see all open windows and switch between them, instead of reopening from the left-hand menu each time.
+> <img width="309" height="36" alt="image" src="https://github.com/user-attachments/assets/6f3fad6e-441b-49bb-a326-3f1d8f1e59e7" />
 
 Containers allow you to run services directly on the MikroTik router. This lab builds several useful containers: a speedtest server, iperf3 server, and nginx content server.
 
