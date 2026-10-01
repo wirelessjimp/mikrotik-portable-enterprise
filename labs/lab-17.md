@@ -194,9 +194,6 @@ This means: connect to the mAP via fallback Wi-Fi, then manage your main router 
 
 ---
 
-
----
-
 ## Lab 17.3 — Backup mAP Configuration
 
 Before proceeding, back up the mAP configuration.
