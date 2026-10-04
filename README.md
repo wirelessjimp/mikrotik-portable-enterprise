@@ -1,12 +1,10 @@
-# Enterprise Networking at Latvian Prices
+# Introduction
 
 **A hands-on MikroTik lab guide for Wi-Fi professionals**
 
 Build a portable enterprise test network for under $200. This guide walks you through configuring MikroTik RouterOS to create a multi-VLAN lab environment with DHCP, firewall isolation, WireGuard VPN, RADIUS authentication, containerized services, and more — using hardware you can throw in a backpack.
 
----
-> Found an issue? [Open a ticket](https://github.com/wirelessjimp/mikrotik-portable-enterprise/issues/new/choose)
----
+***
 
 ## Who This Is For
 
@@ -16,10 +14,10 @@ Network engineers, Wi-Fi professionals, and anyone who wants to learn enterprise
 
 The entire lab runs on two devices:
 
-| Device | Role | Cost |
-|--------|------|------|
-| MikroTik L009 | Primary router — VLANs, DHCP, firewall, WireGuard, containers | ~$114 |
-| MikroTik mAP 2nD | Second device — AP, RADIUS client, remote site | ~$49 |
+| Device           | Role                                                          | Cost   |
+| ---------------- | ------------------------------------------------------------- | ------ |
+| MikroTik L009    | Primary router — VLANs, DHCP, firewall, WireGuard, containers | \~$114 |
+| MikroTik mAP 2nD | Second device — AP, RADIUS client, remote site                | \~$49  |
 
 **Total: Under $170.** Add an Ethernet cable and a USB drive and you're still under $200.
 
@@ -31,55 +29,43 @@ RouterOS v7 is identical across every MikroTik platform — hEX S, L009, RB5009,
 
 By the end of this guide, your MikroTik is:
 
-- A multi-VLAN router with isolated subnets and per-VLAN DHCP
-- A firewall enforcing inter-VLAN isolation with management VLAN access
-- A WireGuard VPN server accepting site-to-site and road warrior connections
-- A RADIUS server (User Manager) for WPA2/WPA3-Enterprise authentication
-- A container host running speed test and network testing tools
-- A DNS server with ad blocking
-- A captive portal for guest access
-- A dual-WAN failover router with automatic backup
-- A portable demo platform you can deploy anywhere
+* A multi-VLAN router with isolated subnets and per-VLAN DHCP
+* A firewall enforcing inter-VLAN isolation with management VLAN access
+* A WireGuard VPN server accepting site-to-site and road warrior connections
+* A RADIUS server (User Manager) for WPA2/WPA3-Enterprise authentication
+* A container host running speed test and network testing tools
+* A DNS server with ad blocking
+* A captive portal for guest access
+* A dual-WAN failover router with automatic backup
+* A portable demo platform you can deploy anywhere
 
 ## Guide Structure
 
 Each lab is a standalone module with prerequisites listed at the top. Follow them in order for a complete build, or jump to what you need if you already have a running config.
 
-**Labs 01-06 — Foundation**
-Initial setup, packages, USB storage, containers, MAC access, and backup.
+**Labs 01-06 — Foundation** Initial setup, packages, USB storage, containers, MAC access, and backup.
 
-**Labs 07-10 — VLANs and Infrastructure**
-Single-bridge VLAN filtering, DHCP, port testing, and firewall isolation.
+**Labs 07-10 — VLANs and Infrastructure** Single-bridge VLAN filtering, DHCP, port testing, and firewall isolation.
 
-**Labs 11-12 — Security**
-Wireless AP and RADIUS/WPA2-Enterprise with User Manager.
+**Labs 11-12 — Security** Wireless AP and RADIUS/WPA2-Enterprise with User Manager.
 
-**Lab 13 — mAP Setup**
-Setting up the mAP as a managed AP with fallback access and management Wi-Fi.
+**Lab 13 — mAP Setup** Setting up the mAP as a managed AP with fallback access and management Wi-Fi.
 
-**Labs 14-16 — VPN**
-WireGuard server, WireGuard clients, and Cloud/Back to Home.
+**Labs 14-16 — VPN** WireGuard server, WireGuard clients, and Cloud/Back to Home.
 
-**Lab 17 — mAP Advanced**
-WireGuard tunnel from mAP to main router, RoMON remote management.
+**Lab 17 — mAP Advanced** WireGuard tunnel from mAP to main router, RoMON remote management.
 
-**Lab 18 — Scripting**
-RSC files, configuration scripts, and automated deployment.
+**Lab 18 — Scripting** RSC files, configuration scripts, and automated deployment.
 
-**Labs 19-20 — Enterprise Integration**
-ICX switch integration and RUCKUS AP integration.
+**Labs 19-20 — Enterprise Integration** ICX switch integration and RUCKUS AP integration.
 
-**Labs 21-24 — Tools and Services**
-Traffic analysis, TFTP/FTP/graphing, DLNA/SMB media server, and NTP.
+**Labs 21-24 — Tools and Services** Traffic analysis, TFTP/FTP/graphing, DLNA/SMB media server, and NTP.
 
-**Labs 25-27 — WAN and Guest Access**
-WAN sources (USB tethering, cellular, Wi-Fi client mode), dual-WAN failover, and hotspot captive portal.
+**Labs 25-27 — WAN and Guest Access** WAN sources (USB tethering, cellular, Wi-Fi client mode), dual-WAN failover, and hotspot captive portal.
 
-**Lab 28 — DNS Advanced**
-Static entries, DNS over HTTPS, and ad blocking.
+**Lab 28 — DNS Advanced** Static entries, DNS over HTTPS, and ad blocking.
 
-**Lab 29 — Administrative Tasks**
-Router identity, passwords, software upgrades, user management, scheduled tasks, and logging.
+**Lab 29 — Administrative Tasks** Router identity, passwords, software upgrades, user management, scheduled tasks, and logging.
 
 > **Note:** Any sub-lab numbered X.9 (e.g., Lab 5.9, Lab 29.9) is optional or reference material. These cover advanced topics, alternative approaches, or background information that isn't required to complete the core build.
 
@@ -92,11 +78,11 @@ Router identity, passwords, software upgrades, user management, scheduled tasks,
 
 ## Prerequisites
 
-- A MikroTik device running RouterOS v7
-- A laptop with an Ethernet port (or USB-to-Ethernet adapter)
-- WinBox (download from mikrotik.com) or a web browser
-- An Ethernet cable
-- A USB drive (for container storage)
+* A MikroTik device running RouterOS v7
+* A laptop with an Ethernet port (or USB-to-Ethernet adapter)
+* WinBox (download from mikrotik.com) or a web browser
+* An Ethernet cable
+* A USB drive (for container storage)
 
 ## Security Notice
 
@@ -104,8 +90,8 @@ This guide builds lab networks intended to sit behind an existing firewall — n
 
 In particular: **never expose SSH (port 22) to the public internet.** In September 2026, a critical exploit chain called MikroTrick (CVE-2026-67276 + CVE-2026-86060) was used to hijack MikroTik routers with SSH open to the WAN. Always keep RouterOS updated and use WireGuard for remote management instead of opening management ports directly.
 
-- [MikroTik Security Advisory](https://mikrotik.com/supportsec/september-2026-vulnerability/)
-- [CERT Polska Advisory](https://cert.pl/en/posts/2026/09/vulnerabilities-in-mikrotik-routeros-actively-exploited/)
+* [MikroTik Security Advisory](https://mikrotik.com/supportsec/september-2026-vulnerability/)
+* [CERT Polska Advisory](https://cert.pl/en/posts/2026/09/vulnerabilities-in-mikrotik-routeros-actively-exploited/)
 
 ## File Organization
 
@@ -141,6 +127,7 @@ labs/
 ├── lab-28.md    # DNS Advanced
 └── lab-29.md    # Administrative Tasks
 ```
+
 > **Note:** Any sub-lab numbered X.9 (e.g., Lab 7.9, Lab 10.9) is optional or reference material. These cover advanced topics, alternative approaches, or background information that isn't required to complete the core build.
 
 ## About
@@ -153,6 +140,6 @@ This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareA
 
 You are free to share and adapt this material, provided you:
 
-- **Credit** Jim Palmer (CWNE #304) as the original author
-- **Do not** use it for commercial purposes
-- **Share** any derivative work under the same license
+* **Credit** Jim Palmer (CWNE #304) as the original author
+* **Do not** use it for commercial purposes
+* **Share** any derivative work under the same license
