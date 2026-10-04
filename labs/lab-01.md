@@ -53,7 +53,7 @@ This lab establishes baseline configuration on a factory-fresh MikroTik router (
 
 ## 1.4 — Firmware Update
 
-14. At the top right of the screen, click from **Quick Set** to **WebFig**.
+14. At the top right of the screen, click from **Quick Set** to **Advanced**.
 
     > **Note:** Quick Set is a simplified dashboard view. WebFig (also known as Advanced) is the full configuration interface. Both are part of the WebUI — you'll switch between them as needed. The URL bar will still show "webfig" even though the UI label says "Advanced."
 
