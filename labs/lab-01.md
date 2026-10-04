@@ -14,7 +14,9 @@ This lab establishes baseline configuration on a factory-fresh MikroTik router (
 
 2. Power on the router and wait approximately 60 seconds for boot.
 
-3. Connect your laptop to the **backdoor port** (second-to-last copper port — ether7 on L009/RB5009, ether4 on hEX S) and set your laptop's wired NIC to DHCP.
+3. Connect your laptop to the second-to-last copper port — ether7 on L009/RB5009, ether4 on hEX S (from here on out this will be known as the **backdoor port**.) and set your laptop's wired NIC to DHCP.
+
+>**NOTE:** The concept of a "backdoor" port is something that I have come up with to help me when I need to access the router in a hurry. This isn't a MikroTik thing, this is a Jim Palmer thing.
 
 4. Your laptop will receive an IP address in the **192.168.88.0/24** subnet.
 
