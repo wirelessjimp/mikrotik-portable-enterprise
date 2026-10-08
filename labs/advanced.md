@@ -7,7 +7,7 @@ Day 2 ends with advanced labs of your pick. They come from the full guide and we
 
 | Lab | What it covers |
 |---|---|
-| [Lab 20 — Graphing and Bandwidth Test](lab-20.md) | Interface graphs, and a bandwidth test to a public server and between your two devices |
+| [Lab 20 — Graphing and Bandwidth Test](lab-20.md) | Interface graphs, and a bandwidth test from your L009 to a remote server |
 | [Lab 21 — Time and NTP](lab-21.md) | Your NTP client and server, and handing out your L009 as the time server |
 | [Lab 22 — DNS](lab-22.md) | Static entries, upstream servers, DNS over HTTPS, forcing DNS through your router, and DNS adblock |
 
