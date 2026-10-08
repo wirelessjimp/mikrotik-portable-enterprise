@@ -35,9 +35,9 @@ Your L009 is already an NTP client. The instructor's script turned it on.
 
 Your L009 is also an NTP server, again from the script.
 
-4. Click **System**, then **NTP Server**. **Enabled**, **Broadcast**, and **Use Local Clock** are checked. Read the settings and don't change them.
+4. Click **System**, then **NTP Server**. **Enabled**, **Broadcast**, and **Use Local Clock** are checked, **Multicast** and **Manycast** are not, and **Local Clock Stratum** is `5`. Read the settings and don't change them.
 
-   > **Why:** **Use Local Clock** lets your L009 keep serving time if its internet servers can't be reached. In the **Peers** list from Lab 2, that is the row for `127.127.1.0`.
+   > **Why:** **Use Local Clock** lets your L009 keep serving time if its internet servers can't be reached. In the **Peers** list from Lab 2, that is the row for `127.127.1.0`, at stratum `5`, the same as **Local Clock Stratum**.
 
 ---
 
@@ -46,20 +46,20 @@ Your L009 is also an NTP server, again from the script.
 Devices on your networks can use your L009 for time. That reduces NTP traffic to the internet and gives them a local source.
 
 5. Click **IP**, then **DHCP Server**, then the **Networks** tab.
-6. Double-click the `192.168.88.0/24` row, your backdoor network. Set **NTP Servers** to `192.168.88.1`. Click **Apply**, then **OK**.
+6. Double-click the `192.168.88.0/24` row, your backdoor network, with the **Comment** `Backdoor`. In the **DHCP Network** window, set **NTP Servers** to `192.168.88.1`, and leave **No NTP** unchecked. Click **Apply**, then **OK**.
 7. In the Terminal, run:
 
 ```
-/ip/dhcp-server/network/print detail where address=192.168.88.0/24
+/ip/dhcp-server/network/print detail
 ```
 
-The entry shows `ntp-server=192.168.88.1`.
+It lists your six DHCP networks. Find the one with `address=192.168.88.0/24`, the **Backdoor** entry. It shows `ntp-server=192.168.88.1`. The other five show `ntp-server=""`.
 
 8. Unplug your laptop's Ethernet cable and plug it back in, so it asks for a new lease. Devices that honor the DHCP time server option now use your L009 for time.
 
 > **Note:** Many devices ignore this option. Network gear and many Linux systems use it. Laptops and phones usually use a time setting of their own.
 
-To undo it, clear the **NTP Servers** field.
+To undo it, double-click the same row, click the **−** beside **NTP Servers**, then click **Apply** and **OK**.
 
 ---
 
