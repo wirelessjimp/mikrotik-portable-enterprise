@@ -9,7 +9,7 @@
 1. Plug the power cable into the power strip, then into the barrel jack on the front left of the router.
 2. Plug the 1 meter Ethernet cable from your Ethernet adapter into **ether7** on the router, and make sure your laptop's wired connection is set to DHCP.
 
-   > **Note:** This port is the **backdoor port** from here on. It isn't a MikroTik concept. Jim has been locked out of way too many routers, so he added one.
+   > **Note:** This port is known as the **backdoor port** from here on. It isn't a MikroTik concept. This is a *Jim has been locked out of way too many routers, so he added one* concept.
 
 ### 1.2 First login
 
