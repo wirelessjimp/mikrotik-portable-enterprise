@@ -1,132 +1,150 @@
-# Lab 15 — Back to Home VPN
+# Lab 15 — Media Center
 
-*Prerequisites: Lab 12 (WireGuard server), or can be done standalone*
+*Prerequisites: Lab 0 (the portal), Lab 4 (your USB drive shows up as `usb1`), Lab 14 (the FTP write user `ftpwrite`, and `tftp-test.txt` in your `tftp-got` folder). VLC is installed on your laptop for the second half.*
 
-Back to Home (BTH) is MikroTik's simplified VPN feature. It uses WireGuard under the hood but handles all the key management and relay infrastructure automatically. Unlike the manual WireGuard setup in Labs 12-13, BTH routes all traffic through MikroTik's cloud relay — no port forwarding required, even when the router is behind NAT.
+**Why:** SMB is the file sharing that works on Windows, macOS, Linux, iOS, and Android. In this lab you share a folder of media from your USB drive, and you lock it down so only one user can read it. On the way you find out that your L009's setup shares more than you meant it to. Then you stream a test video from the same folder with DLNA, using VLC.
 
-BTH is ideal for:
-- Quick phone or laptop connections without manual key exchange
-- Demonstrating that VPN doesn't have to be complicated
-- Scenarios where the router is behind NAT and direct WireGuard isn't practical
+### 15.1 Make the media folder
 
-> **Note:** Back to Home requires MikroTik Cloud (DDNS) to be enabled. If you completed Lab 12.4, you're already set.
+1. **L009 window:** click **New Terminal** and run:
 
----
+```
+/file/add name=usb1/media type=directory
+/file/print where name~"usb1/media"
+```
 
-## Lab 15.1 — Enable Back to Home
+The list shows `usb1/media` as a `directory`.
 
-1. Navigate to **IP** → **Cloud**
+   > **Note:** Your L009's setup already shares `/usb1/media` as **Lab Media Server**. Until now the folder didn't exist, so the share pointed at nothing.
 
-2. Click the **BTH VPN** tab across the top of the Cloud window.
+2. Put a file in the folder with FTP. In a terminal on your laptop, in your `tftp-got` folder, run the command for your system. Type `ftpwrite`'s password at the prompt. **Windows:** use `curl.exe`.
 
-3. Set **Back To Home VPN** to **enabled**.
+```
+curl --user ftpwrite -T tftp-test.txt ftp://192.168.88.1/usb1/media/
+```
 
-4. Click **Apply**
+3. In the L009's Terminal, run:
 
-5. Wait a few seconds, then verify the following fields have populated:
-   - **VPN Status:** running
-   - **VPN DNS Name:** [your router's BTH address, ending in `.vpn.mynetname.net`]
-   - **VPN Port:** [a dynamically assigned port number]
+```
+/file/print where name~"usb1/media"
+```
 
-   > **Note:** The VPN DNS Name for BTH (`.vpn.mynetname.net`) is different from your DDNS address (`.sn.mynetname.net`) from Lab 12. BTH uses MikroTik's relay infrastructure rather than connecting directly to your router's public IP.
+The list shows `usb1/media` and `usb1/media/tftp-test.txt`, about `125.2KiB`.
 
-6. You will also see relay status fields showing which MikroTik relay servers your router has connected to. At least one relay should show as reachable.
+### 15.2 See what a guest can see
 
-   > **Behind NAT?** If your router is behind another router, you'll see a warning at the bottom of the window: "Router is behind a NAT. Remote connection might not work." BTH is specifically designed to work through NAT using the relay — this warning can be safely ignored for BTH connections.
+4. **macOS:** in a terminal on your laptop, ask the L009 which shares it offers to someone with no login:
 
----
+```
+smbutil view -g //192.168.88.1
+```
 
-## Lab 15.2 — Connect a Phone or Tablet
+The list shows two shares: `usb1` and `Lab Media Server`.
 
-The simplest way to connect a mobile device is via QR code using the MikroTik app.
+> ### ⚠️ STOP AND READ
+> `usb1` is your whole USB drive, and the L009 offers it to anyone who connects, with no password. Your L009's setup turned that on. The next section turns it off.
 
-1. On your router, click the **BTH VPN WireGuard** tab across the top of the Cloud window.
+### 15.3 Turn off the whole-drive share
 
-2. The **VPN WireGuard Client Config** field shows a complete WireGuard configuration, and the **VPN WireGuard Client Config QRCode** is displayed below it.
+5. **L009 Terminal:** run:
 
-3. Install the **MikroTik Back To Home** app on your phone or tablet (iOS App Store or Google Play).
-   
-   ![MikroTik Back To Home app](images/mikrotik-bth-app.png)
+```
+/disk/set usb1 smb-sharing=no
+/ip/smb/shares/print
+```
 
-5. Open the app and tap **Join shared** --> **Scan QR code**.
+The list shows `pub` (disabled) and `Lab Media Server`. The `usb1` share is gone.
 
-6. Tap **Scan QR code** and allow the app to access your camera.
+   > **Why:** The share came from a setting on the disk itself. The checkboxes for automatic SMB sharing under **System**, **Disks**, **Settings** were already off, and they weren't the cause.
 
-7. Point your camera at the QR code displayed on your router screen.
+6. **macOS:** run `smbutil view -g //192.168.88.1` again. It lists only `Lab Media Server`.
 
-8. Go ahead and give the tunnel a name you will recognize.
+### 15.4 Create an SMB user and lock the share to it
 
-9. The tunnel configures automatically. Your phone is now connected to your network via BTH VPN.
+7. **L009 window:** click **IP**, then **SMB**, then **Users** on the right.
+8. Select **guest** and click **Disable**.
+9. Click **New**. Set **Name** to `smbuser`, enter a throwaway **Password**, and check **Read Only**. Click **Apply**, then **OK**.
+10. Record the password in **Lab Notes**, in the **SMB** row.
+11. Close the **SMB Users** window to get back to **SMB Settings**.
+12. Click **Shares** on the right, and double-click **Lab Media Server**. Set **Valid Users** to `smbuser`. Click **Apply**, then **OK**.
+13. In the Terminal, run:
 
-   > **Note:** The BTH client configuration includes two peers — one relay peer and one server peer — and routes all traffic through the VPN (full tunnel). This is different from the manual WireGuard setup in Lab 14, which uses a split tunnel that only routes lab network traffic.
+```
+/ip/smb/users/print
+/ip/smb/shares/print
+```
 
----
+`guest` shows **X** (disabled), and `smbuser` is listed as read-only. `Lab Media Server` points at `/usb1/media`, is read-only, and shows `smbuser` under **Valid Users**.
 
-## Lab 15.3 — Connect a Laptop or Desktop
+### 15.5 Connect as smbuser
 
-For laptops and desktops using the standard WireGuard client:
+14. **macOS:** in Finder, press **Cmd+K**, enter `smb://192.168.88.1`, and click **Connect**.
+15. Sign in as a **Registered User** with `smbuser` and its password. **Uncheck** the box that remembers the password in your keychain, then click **Connect**. If it asks which share, pick **Lab Media Server**.
+16. A Finder window titled **Lab Media Server** opens and lists `tftp-test.txt`. The share also shows under **Locations** in the sidebar.
+17. Try to copy a file into the window. macOS refuses, because `smbuser` and the share are read-only.
+18. Eject the share with the eject icon next to it in the sidebar.
 
-1. Navigate to **IP** → **Cloud** → **BTH VPN WireGuard** tab.
+> **Note:** **Windows** and **Linux:** enter `\\192.168.88.1` in File Explorer, or `smb://192.168.88.1` in a Linux file manager, and sign in as `smbuser`.
 
-2. Copy the entire contents of the **VPN WireGuard Client Config** field.
+### 15.6 Get the test video
 
-3. Open the WireGuard app on your laptop:
-   - **Windows/macOS:** Click **Add Tunnel** → **Add empty tunnel**
-   - **Linux:** Create a new configuration file
+19. On the portal, in the **Downloads** card, click **lab-media-test.mp4**. Look near the address bar for **Insecure download blocked**, and click **Keep**.
+20. Open your **Downloads** folder. `lab-media-test.mp4` is 20,886,840 bytes (Finder shows about 21 MB), 14 seconds of video with a spoken line. To check it, run the command for your system, in the folder holding the file. **macOS:** `shasum -a 256 lab-media-test.mp4`. **Windows:** `certutil -hashfile lab-media-test.mp4 SHA256`. The fingerprint ends in `c7af3d`. The full value is:
 
-4. Paste the copied configuration into the tunnel.
+```
+5beebb05df16fc5863fe04a9502c89194e21fee7400ef1503ee8bfae10c7af3d
+```
 
-5. Name the tunnel (e.g., "MikroTik BTH") and save.
+### 15.7 Put the video in the media folder
 
-6. Activate the tunnel.
+21. In a terminal on your laptop, in the folder holding the video, run the command below. Type `ftpwrite`'s password at the prompt. **Windows:** use `curl.exe`.
 
-> **Note:** Each device that connects via BTH uses the same client config. For multiple simultaneous connections or per-device configs, use the manual WireGuard peer setup from Lab 14.2 instead.
+```
+curl --user ftpwrite -T lab-media-test.mp4 ftp://192.168.88.1/usb1/media/
+```
 
----
+22. **L009 Terminal:** run:
 
-## Lab 15.4 — Verify Connection
+```
+/file/print where name~"usb1/media"
+```
 
-1. With the tunnel active, try to reach your MikroTik:
-   - Browse to your router's internal IP (e.g., `http://10.10.255.1`)
-   - Or ping an internal address from terminal
+The list shows `usb1/media/lab-media-test.mp4`, `.mp4 file`, about `19.9MiB`, next to `tftp-test.txt`.
 
-2. On your MikroTik, navigate to **WireGuard** → **Peers** — the BTH-generated peer will appear in the list alongside any manually configured peers. Check for a recent **Last Handshake** timestamp and non-zero Rx/Tx counters.
+> **Note:** Use `.mp4`, `.mp3`, `.avi`, or `.mkv`. The old lab says the L009 doesn't list `.m4v` files, and the fix is to rename them to `.mp4`. Test video from an iPhone should be saved in the most compatible format (not HEVC).
 
----
+### 15.8 See what DLNA offers right now
 
-## Lab 15.5 — Back to Home vs Manual WireGuard
+23. **Turn Wi-Fi off on your laptop.** If it's on, VLC may look for media servers on the class Wi-Fi and never find your L009. Your connection through the cable keeps working.
+24. Open **VLC**. In the sidebar, under **Local Network**, click **Universal Plug'n'Play**. Wait about a minute.
+25. Find `Student31 usb1 media` (your own label in place of `Student31`) and expand it. The tree shows the folders on your USB drive, such as `lost+found`, `nginx-conf`, `nginx-content`, `pull`, and `speedtest-logs`, and your video under `media`.
+26. Open `media` and double-click `lab-media-test.mp4`. It plays from your L009, and you hear the spoken line.
 
-| Feature | Back to Home | Manual WireGuard |
-|---------|--------------|------------------|
-| Setup complexity | Minimal — QR code or config paste | More steps, manual key exchange |
-| Key management | Automatic | Manual |
-| Tunnel type | Full tunnel (all traffic) | Split tunnel (lab networks only) |
-| NAT traversal | Built-in via relay | Requires port forwarding |
-| Multiple peers | Single shared config | Per-device configs, unlimited peers |
-| Customization | None | Full control |
-| Best for | Quick access, demos, NAT situations | Production, multi-site, specific routing |
+> ### ⚠️ STOP AND READ
+> Your L009's setup shares the whole USB drive with DLNA, the same way it shared it with SMB. Any media player on the cable side can browse your drive's folders, and play any media file anywhere on it. The next section turns that off.
 
-**When to use Back to Home:**
-- You need quick remote access without port forwarding
-- You're behind NAT and direct WireGuard won't reach your router
-- You're demonstrating VPN to non-technical users
+### 15.9 Serve only the media folder
 
-**When to use manual WireGuard:**
-- Multiple devices needing separate peer configs
-- Split tunneling (only route specific subnets)
-- Site-to-site connectivity
-- Integration with existing infrastructure
+27. **L009 Terminal:** run:
 
----
+```
+/disk/set usb1 media-sharing=no
+/ip/media/print
+```
 
-## Lab 15 Summary
+The list is empty. The server that shared the whole drive is gone.
 
-You now have:
-- ✅ Back to Home VPN enabled and running
-- ✅ QR code connection for mobile devices via the MikroTik app
-- ✅ Client config for laptop and desktop WireGuard clients
-- ✅ Understanding of when to use BTH vs manual WireGuard
+   > **Why:** The disk's own media-sharing setting created that server, as its SMB setting created the SMB share.
 
-Back to Home proves that VPN doesn't have to be complicated — and it works even when your router is behind NAT.
+28. Add a server for the media folder only:
 
----
+```
+/ip/media/add interface=bridge path=usb1/media friendly-name="Lab Media Server"
+/ip/media/print
+```
+
+The list shows one entry: **Interface** `bridge`, **Friendly Name** `Lab Media Server`, **Path** `usb1/media`, **Allowed IP** `0.0.0.0`, **Status** `Running`.
+
+29. In VLC, close the app and open it again, click **Universal Plug'n'Play**, and wait about a minute. `Lab Media Server` lists only `lab-media-test.mp4`, 14 seconds long. Double-click it to play.
+
+> **Note:** If you turn Wi-Fi back on, VLC may list servers from other routers on the class network, and may stop showing yours.

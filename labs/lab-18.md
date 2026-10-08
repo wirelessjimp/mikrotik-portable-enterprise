@@ -1,339 +1,134 @@
-# Lab 18 — Scripting & RSC Files
+# Lab 18 — RSC Files
 
-*Prerequisites: Lab 13 (mAP configured with fallback and trunk)*
+*Prerequisites: Lab 0 (the portal and Lab Notes), Lab 1 (your L009), Lab 6 (your mAP, and a WinBox window for each device). Do this near the end, after the labs you plan to finish.*
 
-In Lab 13, you manually built a fallback configuration for the mAP — a bridge, IP address, DHCP server, and Wi-Fi. It took about 20 clicks and commands. Now imagine doing that on 10 devices, or rebuilding it after a factory reset.
+**Why:** Your devices were built from two script files before class. Here you find out what a script file is, make one from your own device, run one, and see why a script behaves differently on an empty device than on a device that already has a configuration. That last part is why the completed files posted at the end of Day 2 work the way they do.
 
-This lab teaches you how to turn that manual work into a reusable script. Once you understand RSC files, you can configure a fresh MikroTik device in seconds instead of minutes.
+### 18.1 Back up both devices first
 
->**Note:** For this lab, you need to make sure you are connected to your mAP on Ether2 because the configurations on the mAP are going to change multiple times.
+1. **L009 window:** click **Files**, then click **Backup** under **Actions**.
+2. Set **Name** to `Student31-l009-before-rsc`. Use your own label (`Student01` to `Student12`). Leave the password blank, click **Don't Encrypt**, then click **Backup Config**.
+3. Select `Student31-l009-before-rsc.backup` in the list and click **Download...** under **Actions**.
+4. **mAP window:** do steps 1 to 3 again, with the name `Student31-mAP-before-rsc`. Download it now, not later. A backup has disappeared from the mAP's **Files** list after a restart before.
+5. Open your **Downloads** folder and check that both files are there. On the instructor's router they were about 90 KB and 34 KB.
 
----
+   > **Why:** Nothing in this lab is meant to break your devices. A backup is your way back if something does. It holds a device's whole configuration, including the Wi-Fi keys and passwords that an export leaves out.
 
-## Lab 18.1 — What Are RSC Files?
+> ### 🔐 Treat the backups like passwords
+> They aren't encrypted, and each one holds a whole configuration. Delete both from your laptop when class ends (Lab 17.2).
 
-An RSC file is a plain text file containing MikroTik CLI commands. When you export a configuration, MikroTik generates an RSC file. When you import an RSC file, MikroTik runs each command in sequence.
+### 18.2 What an RSC file is
 
-### Export vs Backup
+An RSC file is a plain text file of RouterOS commands, one after another, the same commands you type in the Terminal. You've already used two. Before class, the instructor imported `class-student-l009.rsc` onto your L009 and `class-student-map.rsc` onto your mAP, both on empty devices. That is how your kit arrived with its bridges, DHCP servers, and firewall already in place.
 
-| Type | Extension | Contents | Use Case |
-|------|-----------|----------|----------|
-| Backup | .backup | Binary, encrypted | Restore exact config to same device |
-| Export | .rsc | Plain text commands | Recreate config on any device, edit by hand |
+| | Backup | RSC file |
+|---|---|---|
+| Extension | `.backup` | `.rsc` |
+| Contents | A binary copy of one device's whole configuration | Plain text commands you can read and edit |
+| Use it to | Put the same device back as it was | Build a device from a list, or build many from one list |
 
-**Backup files** are for disaster recovery — restore everything exactly as it was.
+### 18.3 Make one from your own device
 
-**RSC files** are for automation — build a configuration from scratch, copy to multiple devices, or create a template you can customize.
-
-### Viewing an RSC File
-
-1. On your mAP, open **New Terminal**
-
-2. Run:
-   ```
-   /export
-   ```
-
-3. The current configuration scrolls by as CLI commands.
-
-4. To save it to a file:
-   ```
-   /export file=lab17-current-config
-   ```
-
-5. Navigate to **Files** and download `lab17-current-config.rsc`
-
-6. Open the file in any text editor — you'll see commands like:
-   ```
-   /interface bridge
-   add comment="Standalone fallback bridge" name=br-fallback
-   add comment="Management bridge VLAN 255" name=br-mgmt
-   
-   /interface vlan
-   add comment="VLAN 20 from trunk" interface=ether1 name=vlan20 vlan-id=20
-   ...
-   ```
-
-This is your entire configuration as a script.
-
----
-
-## Lab 18.2 — Anatomy of an RSC File
-
-RSC files follow a predictable structure. Understanding it helps you write your own scripts.
-
-### Command Structure
+6. **L009 Terminal:** run this, with your own label:
 
 ```
-/path/to/menu
-command argument1=value1 argument2=value2
+/export file=Student31-l009-export
 ```
 
-For example:
-```
-/ip address
-add address=192.168.89.1/27 interface=br-fallback comment="Fallback management IP"
-```
-
-### Multiple Commands in Same Menu
-
-When multiple commands target the same menu, you don't repeat the path:
+7. **mAP Terminal:** run this, with your own label:
 
 ```
-/interface vlan
-add comment="VLAN 20 from trunk" interface=ether1 name=vlan20 vlan-id=20
-add comment="VLAN 30 from trunk" interface=ether1 name=vlan30 vlan-id=30
-add comment="VLAN 40 from trunk" interface=ether1 name=vlan40 vlan-id=40
-add comment="VLAN 255 from trunk" interface=ether1 name=vlan255 vlan-id=255
+/export file=Student31-mAP-export
 ```
 
-### Comments in Scripts
+8. In each window, click **Files**, select the new `.rsc` file, and click **Download...**. Download the mAP's file now.
+9. Open both files in a text editor on your laptop. Don't save any changes. Each section starts with a line that begins with `/`, followed by `add` or `set` lines. Search each file for your label, such as `Student31`. You find the identity you set in Lab 1 and Lab 6.
+10. Search the mAP's file for `wpa2-pre-shared-key`. Nothing matches, although your fallback network has a key.
 
-Lines starting with `#` are comments:
+   > **Why:** RouterOS leaves passwords, keys, and secrets out of an export on purpose, and it lists only the settings that differ from a device's defaults. A script built from an export needs its secrets put back by hand.
 
-```
-# This section builds the fallback configuration
-# for standalone operation without main router
+### 18.4 Run one
 
-/interface bridge
-add name=br-fallback comment="Standalone fallback bridge"
-```
-
----
-
-## Lab 18.3 — The Fallback Configuration as a Script
-
-Here's everything you built in Lab 13.3, converted to a script:
+11. **L009 Terminal:** make a one-line script on the router itself, so no editor is involved, and look at it:
 
 ```
-# ============================================
-# mAP Fallback Configuration Script
-# ============================================
-# Purpose: Creates standalone access on 192.168.89.0/27
-# when mAP is not connected to main router
-#
-# Use: Import after factory reset or on new device
-# ============================================
-
-# Create fallback bridge
-/interface bridge
-add name=br-fallback comment="Standalone fallback bridge"
-
-# Add ETH2 to fallback bridge
-/interface bridge port
-add bridge=br-fallback interface=ether2 comment="Fallback ETH2"
-
-# Configure fallback IP
-/ip address
-add address=192.168.89.1/27 interface=br-fallback comment="Fallback management IP"
-
-# Create DHCP pool
-/ip pool
-add name=fallback-pool ranges=192.168.89.10-192.168.89.30 comment="Fallback DHCP pool"
-
-# Create DHCP server
-/ip dhcp-server
-add name=fallback-dhcp interface=br-fallback address-pool=fallback-pool lease-time=01:00:00 add-arp=yes disabled=no
-
-# Create DHCP network
-/ip dhcp-server network
-add address=192.168.89.0/27 gateway=192.168.89.1 dns-server=192.168.89.1 comment="Fallback network"
-
-# Configure Wi-Fi security
-/interface wireless security-profiles
-add name=fallback-security mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key="CHANGE_THIS_PASSWORD"
-
-# Configure Wi-Fi interface
-/interface wireless
-set [ find name=wlan1 ] mode=ap-bridge band=2ghz-onlyn channel-width=20mhz ssid="mAP-Fallback" security-profile=fallback-security country="united states" disabled=no
-
-# Add Wi-Fi to fallback bridge
-/interface bridge port
-add bridge=br-fallback interface=wlan1 comment="Fallback Wi-Fi"
-
-# ============================================
-# End of Fallback Configuration
-# ============================================
+/file/add name=rsc-demo.rsc contents="/interface/bridge/add name=rsc-demo"
+/file/print detail where name=rsc-demo.rsc
 ```
 
-> **Note:** Before using this script, change `CHANGE_THIS_PASSWORD` to your actual Wi-Fi password, and update the country code if needed.
+The list shows `type=script`, `size=35`, and your line under `contents`.
 
----
+   > **Note:** `/file/get rsc-demo.rsc contents` prints nothing, even though the contents are there. Use `print detail`.
 
-## Lab 18.4 — Create Your Own Fallback Script
-
-Let's extract just the fallback portion from your mAP's configuration and save it as a reusable script.
-
-### Build the Fallback Script
-
-1. Open the `lab17-current-config.rsc` file you downloaded in Lab 18.1
-
-2. Save a copy as `mAP-fallback-config.rsc`
-
-3. Delete every section that is NOT related to the fallback configuration. Keep:
-   - `/interface bridge` — only `br-fallback`
-   - `/interface wireless security-profiles` — only `fallback-psk`
-   - `/interface wireless` — only wlan1 with fallback settings
-   - `/interface bridge port` — only ether2 and wlan1 in `br-fallback`
-   - `/ip pool` — only `fallback-pool`
-   - `/ip dhcp-server` — only `fallback-dhcp`
-   - `/ip dhcp-server network` — only `192.168.89.0/27`
-   - `/ip address` — only `192.168.89.1` on `br-fallback`
-
-4. Add the WPA2 password back into the security profile — exports strip passwords for security
-
-   **Before (from export — password missing):**
-   
-```
-add authentication-types=wpa2-psk mode=dynamic-keys name=fallback-psk
-supplicant-identity=""
-```
-
-   **After (password added):**
+12. Run the script:
 
 ```
-add authentication-types=wpa2-psk mode=dynamic-keys name=fallback-psk
-wpa2-pre-shared-key="YourFallbackPassword" supplicant-identity=""
+/import file-name=rsc-demo.rsc
 ```
 
-   > **Watch out:** `supplicant-identity` is NOT the password — it's a client identity field used in 802.1X. The password goes in `wpa2-pre-shared-key`. This is the most common mistake when editing exported security profiles.
+It prints `Script file loaded and executed successfully`.
 
-> **Why this approach?** MikroTik exports are in dependency order — pools before servers, bridges before ports. Deleting lines preserves that order. Building from scratch requires you to get the order right yourself.
-
-5. Add comments explaining each section. Use `#` at the beginning of a line for comments:
-   ```
-   # Fallback bridge for emergency access
-   /interface bridge add name=br-fallback
-   
-   # Fallback IP address
-   /ip address add address=192.168.89.1/27 interface=br-fallback
-   ```
-
-6. Save your changes
-
-You now have a reusable script for the fallback configuration.
-
-> **Checkpoint:** Your finished script should be around 25-30 lines (without comments). If it's significantly longer, you're including sections that aren't fallback. If it's under 15 lines, you're missing something — check the list in step 3.
-
----
-
-## Lab 18.5 — Loading Scripts onto a Fresh Device
-
-Now let's test the script on a fresh device (or the same device after a reset).
-
-### Reset and Restore (Class Exercise)
-
-This is the real test — prove your script works by destroying the config and rebuilding from it.
-
-1. Navigate to **System** → **Reset Configuration**
-   - Check **No Default Configuration**
-   - Click **Reset Configuration**
-   - Click **OK**
-
-2. The mAP reboots with a blank config. Ensure your laptop is directly connected to **ether2** on the mAP
-
-3. Open WinBox and connect via MAC discovery (no IP address or password exists yet)
-
-4. Navigate to **Files** and upload your `mAP-fallback-config.rsc` from your laptop
-
-5. Open **New Terminal** and run:
+13. Check what it did:
 
 ```
-/import file-name=mAP-fallback-config.rsc
+/interface/bridge/print where name=rsc-demo
 ```
 
-7. Watch each command execute. When complete, WinBox will likely disconnect — the network configuration just changed underneath you
+The list shows a bridge named `rsc-demo`, running. The import typed the command for you.
 
-> **Alternative:** If `/import` fails, open the script in a text editor on your laptop, select all, copy, and paste directly into the WinBox terminal. This bypasses the import command and executes each line individually.
+### 18.5 An empty device, and a device that already has a configuration
 
-8. Verify: disconnect from ether2, connect to the **mAP-Fallback** SSID, and confirm you get a 192.168.89.x address
+14. Run the same script again:
 
-> **If it fails:** This is the learning moment. Read the error, find the missing or broken line in your script, fix it, and try again. Your classmates' scripts may have different errors — help each other debug.
+```
+/import file-name=rsc-demo.rsc
+```
 
-### Restore Full Configuration
+It prints `Script Error: failure: already have interface with name rsc-demo (/interface/bridge/add; line 1)`. It names the command and the line.
 
-The fallback script proved your scripting skills, but the mAP needs its full configuration back to continue with the remaining labs.
+   > **Why:** The script was written as if the bridge didn't exist. On an empty device that is true, and it works. On your device the bridge is already there, so the first line fails.
 
-1. Upload the binary backup you created at the end of Lab 13 (`mAP-backup.backup`) to the mAP via **Files**
+15. Now a script of two lines. The first fails, and the second would work:
 
-2. Select your backup file and click **Restore**
+```
+/file/add name=rsc-demo-two.rsc contents="/interface/bridge/add name=rsc-demo\n/interface/bridge/add name=rsc-demo2"
+/import file-name=rsc-demo-two.rsc
+/interface/bridge/print terse where name~"rsc-demo"
+```
 
-3. The mAP reboots with the complete configuration — VLANs, bridges, WireGuard, everything
+The import fails on line 1 again. The list shows only `rsc-demo`. The second line never ran.
 
-> **This is why we back up.** The RSC script rebuilt one piece. The binary backup restores everything. Different tools, different jobs — just like Lab 6 explained.
+   > **Why:** An import stops at its first error. On a device that already has part of a configuration, a script stops at the first item that exists and skips everything after it. That leaves the device half built.
 
----
+16. Now the same command, wrapped so a failure doesn't stop the script:
 
-> **Additional script templates** — trunk, WireGuard, RoMON, and complete deployment scripts are available in the full guide.
+```
+/file/add name=rsc-demo-wrapped.rsc contents=":do { /interface/bridge/add name=rsc-demo } on-error={ :log info \"rsc-demo: bridge exists or failed\" }"
+/import file-name=rsc-demo-wrapped.rsc
+/log/print where message~"rsc-demo"
+```
 
----
+The import prints `Script file loaded and executed successfully`. The log ends with `rsc-demo: bridge exists or failed`.
 
-## Lab 18 — Script Reference
+   > **Why:** `:do { ... } on-error={ ... }` runs the command in the first braces. If it fails, RouterOS runs the part in the second braces, here a log line, and carries on. The `\"` is how you type a quote inside the text of a command. The instructor's completed files wrap their blocks this way.
 
-The following sections provide ready-made scripts for common configurations. These are not hands-on exercises — use them as templates when building your own deployments.
+### 18.6 Clean up
 
-### Method 1: Upload and Import via WinBox
+17. **L009 Terminal:** remove the demo bridge and the three demo files:
 
-1. Connect to the target device via WinBox
+```
+/interface/bridge/remove [find name=rsc-demo]
+/file/remove [find name~"^rsc-demo"]
+/interface/bridge/print terse where name~"rsc-demo"
+/file/print where name~"rsc-demo"
+```
 
-2. Navigate to **Files**
+The last two print nothing.
 
-3. Use the Upload button to upload `.rsc` file into the Files window (or use the Upload button)
+### 18.7 What this means for the completed files
 
-4. Open **New Terminal**
+At the end of Day 2 the instructor posts `class-complete-l009.rsc` and `class-complete-map.rsc`. Each rebuilds a device as far as a script can. Part of each file is wrapped, so a block that already exists is logged and skipped. The first part of the L009's file is not wrapped, so it expects an empty device and stops at its first error. That is why Appendix A has you reset the device first. After an import, read the log to see what failed:
 
-5. Run:
-   ```
-   /import file-name=mAP-fallback-config.rsc
-   ```
-
-6. Watch the terminal — each command executes and shows its result
-
-7. If there are errors, the terminal shows which line failed
-
-### Method 2: Copy/Paste into Terminal
-
-For quick testing or small scripts:
-
-1. Connect to the device via WinBox
-
-2. Open **New Terminal**
-
-3. Open your `.rsc` file in a text editor
-
-4. Copy the entire contents
-
-5. Right-click in the WinBox terminal and paste
-
-6. Commands execute immediately
-
-> **Warning:** Be careful with copy/paste on large scripts. If the connection drops mid-paste, you'll have a partial configuration.
-
-### Method 3: FTP/SFTP Upload
-
-For automated deployment:
-
-1. Enable FTP or SSH on the target device
-
-2. Upload the `.rsc` file via FTP/SFTP to the device's file system
-
-3. SSH in and run:
-   ```
-   /import file-name=mAP-fallback-config.rsc
-   ```
-
----
-
-## Lab 18 Summary
-
-You now understand:
-
-- ✅ The difference between .backup (binary) and .rsc (text) files
-- ✅ How RSC files are structured
-- ✅ How to export your configuration as a script
-- ✅ How to create modular, reusable scripts
-- ✅ How to deploy a complete configuration from script
-
-**The payoff:** You can now configure a factory-fresh MikroTik device in under a minute by importing a script. No more clicking through 50 menus.
-
----
+```
+/log/print where message~"class-complete"
+```

@@ -1,212 +1,45 @@
-# Lab 8 — Setting Up DHCP
+# Lab 8 — RoMON (Manage a Device Without an IP Address)
 
-*Prerequisites: Lab 7*
+*Prerequisites: Lab 6 (both devices reachable in WinBox), Lab 7*
 
-Without DHCP, devices can't automatically get IP addresses. This lab builds DHCP infrastructure for each VLAN.
+**Why:** RoMON is a management overlay between MikroTik devices. It runs at Layer 2, so WinBox can reach a device that has no IP route to you. In this lab you give your two devices their own secret and open a session to your mAP by its ID, not its IP address.
 
----
+> **Note:** The instructor's script turned RoMON on for every device in the room, including the class router, and gave them all the same secret. That's why your mAP was visible through the class router before you did anything. When you change the secret, your devices only talk to each other, so they need a direct cable between them.
 
-## Lab 8.1 — Setting Up IP Addresses
+### 8.1 Move the mAP back to your L009
 
-First, assign IP addresses to each VLAN interface. These become the default gateways for each VLAN.
+1. Unplug the cable labeled **mAP** from the mAP's **ETH1**. Plug the 15 cm jumper into **ether8** on the L009 and into the mAP's **ETH1**. Wait about 30 seconds.
+2. Your WinBox window to the mAP drops. Open a new one with the cube icon and connect to `10.255.255.2`. Clear **Password** first and type your password.
 
-### Create IP Addresses
+   > **Note:** The mAP's address on its WAN side changes back to `10.10.x.x`. The tunnel address `10.255.255.2` doesn't change, so that's the address to use.
 
-1. Navigate to **IP** → **Addresses**
+### 8.2 Look at RoMON before you change anything
 
-2. Click **New** and configure:
-   - **Comment:** VLAN 20
-   - **Address:** 10.10.20.1/24
-   - **Network:** 10.10.20.0 (click the **+** button to expand)
-   - **Interface:** vlan20
-   - **Enabled:** Checked
+3. **L009 window:** click **Tools**, then **RoMON**. **RoMON Settings** shows **Enabled** checked, **Secrets** filled in, and a **Current ID** (a MAC address). Don't change anything yet.
+4. Click **Discovery** under **Actions**. The list shows the class router and your mAP, each at **Hops** `1`, with the device's own ID as its **Path**. Click **Cancel** on **Discovery**.
 
-   > **Important:** Assign the IP address to the **VLAN interface** (vlan20), not the bridge (vlan20bridge). When VLAN filtering is enabled on the bridge, traffic arrives on the VLAN interface. Services like DHCP will not function correctly if the IP address is on the bridge instead of the VLAN interface.
+   > **Why:** **Hops** counts the devices between you and the one listed. With the mAP on the class network, it showed `2` through the class router. On the jumper it's `1`.
 
-3. Click **Apply** & **OK**
+### 8.3 Change the secret
 
-4. Create the second IP address using the UI:
-   - **Comment:** VLAN 30
-   - **Address:** 10.10.30.1/24
-   - **Network:** 10.10.30.0
-   - **Interface:** vlan30
+5. Write a throwaway RoMON secret in **Lab Notes**, in the **RoMON** row under **Shared Secrets**.
+6. **L009 window:** in **RoMON Settings**, **delete the existing secret** in the **Secrets** field, type your new one, and click **Apply**, then **OK**.
+7. Open **Discovery** again. The list is empty.
 
-5. Create the remaining IP addresses using CLI:
+   > **Why:** RoMON only talks to devices that share its secret. Your L009 no longer matches the mAP or the class router.
 
-    ```
-    /ip/address/add address=10.10.40.1/24 network=10.10.40.0 interface=vlan40 comment="VLAN 40"
-    /ip/address/add address=10.10.255.1/24 network=10.10.255.0 interface=vlan255 comment="VLAN 255"
-    ```
+8. **mAP window:** click **Tools**, then **RoMON**. **Delete the existing secret**, type the same new one, and click **Apply**, then **OK**.
+9. Click **Discovery** in the mAP window. It lists your L009 at **Hops** `1`. The class router isn't on the list.
 
-When complete, you should have:
+   > **Why:** Your two devices share a secret, and the class router doesn't know it.
 
-| Comment | Address | Network | Interface |
-|---------|---------|---------|-----------|
-| VLAN 20 | 10.10.20.1/24 | 10.10.20.0 | vlan20 |
-| VLAN 30 | 10.10.30.1/24 | 10.10.30.0 | vlan30 |
-| VLAN 40 | 10.10.40.1/24 | 10.10.40.0 | vlan40 |
-| VLAN 255 | 10.10.255.1/24 | 10.10.255.0 | vlan255 |
+### 8.4 Open a session through RoMON
 
-> **IP Addressing Pattern:** The third octet matches the VLAN ID. This makes troubleshooting easier — if a device has IP 10.10.30.x, you immediately know it's on VLAN 30.
+10. Click the cube icon in the L009 window. Set **Connect to** to `192.168.88.1`, clear **Password**, type your password, and click **Connect to RoMON**.
+11. Click the **RoMON Neighbors** tab, click your mAP's row, and click **Connect**.
+12. The title bar reads `admin@` followed by the mAP's **ID**, then `(Student31-mAP)`, then `via192.168.88.1`. The status bar at the bottom shows the same ID where an IP address used to be.
 
----
+> **Why:** You didn't type an IP address to get in. WinBox found the mAP by its ID, over Layer 2, through your L009, and the title bar says which device carried the session.
 
-## Lab 8.2 — Setting Up IP Pools
-
-IP pools define which addresses DHCP can hand out.
-
-### Create Address Pools
-
-1. Navigate to **IP** → **Pool**
-
-2. Click **New** and configure:
-   - **Comment:** VLAN 20
-   - **Name:** vlan20
-   - **Addresses:** 10.10.20.10-10.10.20.250
-   - **Next Pool:** none
-
-3. Click **Apply** & **OK**
-
-4. Create the second pool using the UI:
-   - **Comment:** VLAN 30
-   - **Name:** vlan30
-   - **Addresses:** 10.10.30.10-10.10.30.250
-   - **Next Pool:** none
-
-5. Create the remaining pools using CLI:
-
-    ```
-    /ip/pool/add name=vlan40 ranges=10.10.40.10-10.10.40.250 comment="VLAN 40"
-    /ip/pool/add name=vlan255 ranges=10.10.255.10-10.10.255.250 comment="VLAN 255"
-    ```
-
-> **Best Practice:** Don't use the full range. Reserve .1-.9 for static assignments (servers, printers, etc.) and .251-.254 for network infrastructure.
-
-> **Syntax Note:** No spaces in the address range. `10.10.20.10-10.10.20.250` works; `10.10.20.10 - 10.10.20.250` fails.
-
----
-
-## Lab 8.3 — Setting Up DHCP Servers
-
-### Create DHCP Servers
-
-1. Navigate to **IP** → **DHCP Server**
-
-2. Click **New** and configure:
-   - **Name:** vlan20
-   - **Interface:** vlan20
-   - **Lease Time:** 02:00:00 (2 hours)
-   - **Address Pool:** vlan20
-   - **Add ARP For Leases:** Checked (scroll down to find this)
-   - **Enabled:** Checked
-
-   > **Important:** Bind the DHCP server to the **VLAN interface** (vlan20), not the bridge (vlan20bridge). This must match where the IP address was assigned in Lab 8.1. If the DHCP server is bound to an interface without an IP address, it will show as INVALID and will not issue leases.
-
-3. Click **Apply** & **OK**
-
-4. Create the second DHCP server using the UI:
-   - **Name:** vlan30
-   - **Interface:** vlan30
-   - **Lease Time:** 02:00:00
-   - **Address Pool:** vlan30
-   - **Add ARP For Leases:** Checked
-
-5. Create the remaining DHCP servers using CLI:
-
-    ```
-    /ip/dhcp-server/add name=vlan40 interface=vlan40 lease-time=02:00:00 address-pool=vlan40 add-arp=yes
-    /ip/dhcp-server/add name=vlan255 interface=vlan255 lease-time=02:00:00 address-pool=vlan255 add-arp=yes
-    ```
-
-### Configure DHCP Networks
-
-> **⚠ Critical: Do not skip this section.** Creating DHCP servers (above) is not enough — each server also requires a network definition in the **Networks** tab. Without it, the DHCP server is bound to the interface but has no network parameters to hand out. Clients will send DHCP discover requests and receive nothing in return. This is a silent failure — the server appears configured but is completely non-functional. Complete every network entry below before testing.
-
-6. From **IP** → **DHCP Server** window click the **Networks** tab at the top.
-
-8. Click **New** and configure:
-   - **Comment:** VLAN 20
-   - **Address:** 10.10.20.0/24
-   - **Gateway:** 10.10.20.1 (click the **+** button to expand)
-   - **Netmask:** 255.255.255.0
-   - **DNS Servers:** 10.10.20.1
-
-10. Click **Apply** & **OK**
-
-11. Create the second network using the UI:
-   - **Comment:** VLAN 30
-   - **Address:** 10.10.30.0/24
-   - **Gateway:** 10.10.30.1
-   - **Netmask:** 255.255.255.0
-   - **DNS Servers:** 10.10.30.1
-
-11. Create the remaining networks using CLI:
-
-    ```
-    /ip/dhcp-server/network/add address=10.10.40.0/24 gateway=10.10.40.1 netmask=255.255.255.0 dns-server=10.10.40.1 comment="VLAN 40"
-    /ip/dhcp-server/network/add address=10.10.255.0/24 gateway=10.10.255.1 netmask=255.255.255.0 dns-server=10.10.255.1 comment="VLAN 255"
-    ```
-> **Optional:** If you installed Pi-hole in Lab 5.9, you can point your DHCP DNS at the Pi-hole container (172.17.0.5) instead of the VLAN gateway for network-wide ad blocking. Only do this if the Pi-hole container is running and healthy — if it stops, DNS resolution stops for that VLAN. You can always change it back to the gateway IP later.
-
----
-
-### Lab 8 Checkpoint
-
-At this point, you have IP addresses, DHCP pools, DHCP servers, and DHCP networks configured for each VLAN. Everything is in place, but we haven't tested it yet — that's Lab 9. If you're eager to verify, plug a laptop into ether2 and see if you get a 10.10.20.x address. If not, don't troubleshoot yet — Lab 9 walks through systematic testing and common issues.
-
----
-
-## Lab 8.9 — DHCP Option 43 (Future Reference)
-
-*Reference: Use when deploying access points that need to find a local controller.*
-
-Most AP vendors use DHCP Option 43 to tell APs where to find their controller. This section documents the process for future deployments.
-
-### Configuration Steps
-
-1. Navigate to **IP** → **DHCP Server** → **Options** tab
-
-2. Click **New**:
-   - **Name:** (Vendor) Option 43 — use the vendor name to identify the controller
-   - **Code:** 43
-   - **Value:** `0x[hex_code]` — see vendor codes below
-
-3. Click **Apply** & **OK**
-
-4. Navigate to **Option Sets** tab
-
-5. Click **New**:
-   - **Name:** (Vendor) Option 43
-   - **Options:** Select the option you created in step 2
-
-6. Click **Apply** & **OK**
-
-7. Navigate to **DHCP** tab
-
-8. Click on the DHCP server for the subnet where APs will connect
-
-9. Find **DHCP Option Set** and select your option set
-
-10. Click **Apply** & **OK**
-
-### Understanding the Hex Value
-
-The value format is: `0x` + `Vendor Code` + `Length` + `IP Address in Hex`
-
-For an example controller IP of **10.10.10.20**:
-
-| Vendor | Value |
-|--------|-------|
-| RUCKUS SZ | `0x060b31302e31302e31302e3230` |
-| Cisco | `0xf1040a0a0a14` |
-| Extreme | `0xe2040a0a0a14` |
-| Ubiquiti | `0x01040a0a0a14` |
-| Fortinet | `0x2b1a0a2e0a2e0a2e142e` |
-| Aruba | Requires Option 60 set to "ArubaAP" + Option 43: `0x0a0a0a14` |
-
-### Helpful Calculators
-
-- https://wifiwizardofoz.com/dhcp-option-43-calculator/
-- https://shimi.net/services/opt43/
-
----
+> ### ⚠️ STOP AND READ
+> After step 6, your L009 is cut off from the class router's RoMON until you change the mAP too. That's expected. If your mAP isn't on the jumper, it never shows up again, because it needs a direct cable once your devices have their own secret.

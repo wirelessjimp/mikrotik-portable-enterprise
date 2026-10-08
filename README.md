@@ -25,76 +25,55 @@ To get dual-band Wi-Fi functionality from a Mikrotik device, consider the MikroT
 
 RouterOS v7 is identical across every MikroTik platform — hEX S, L009, RB5009, CCR2004. Same CLI, same WinBox, same feature set. Learn on a $69 device, deploy on anything.
 
+## How This Class Works
+
+Before class, your L009 and mAP were built from two script files (RSC files). The bridges, VLANs, DHCP servers, firewall, and the other plumbing are already in place. You spend your time on what a script can't do: certificates, containers, passwords, the tunnel, and Wi-Fi.
+
+**Day 1** is Labs 00 to 05, then Labs 14 and 15. That takes you from a connected router to certificates and HTTPS, three containers, a RADIUS server, and file and media services. **Day 2** is Labs 06 to 09 (the mAP, the tunnel, enterprise Wi-Fi, and RoMON), then your pick from Labs 10 to 13, Lab 16, Lab 17, and the advanced labs. Lab 18 and Appendix A come at the end. Near the end of Day 2 the instructor posts a completed file for each device, and Appendix A shows how to use them if you fall behind.
+
 ## What You'll Build
 
-By the end of this guide, your MikroTik is:
-
-- A multi-VLAN router with isolated subnets and per-VLAN DHCP
-- A firewall enforcing inter-VLAN isolation with management VLAN access
-- A WireGuard VPN server accepting site-to-site and road warrior connections
-- A RADIUS server (User Manager) for WPA2/WPA3-Enterprise authentication
-- A container host running speed test and network testing tools
-- A DNS server with ad blocking
-- A captive portal for guest access
-- A dual-WAN failover router with automatic backup
-- A portable demo platform you can deploy anywhere
+- Your own certificate authority, and signed certificates for HTTPS and RADIUS
+- Three containers: OpenSpeedTest, iperf3, and an nginx web server
+- A RADIUS server (User Manager) for WPA2-Enterprise Wi-Fi, with PEAP and EAP-TLS
+- A WireGuard tunnel from the mAP to the L009
+- RoMON management of a device that has no IP address
+- MikroTik Cloud and Back to Home
+- Wi-Fi as a second internet connection, with failover and a hardware button that switches modes
+- TFTP, FTP, SMB, and DLNA file services from a USB drive
+- A guest Wi-Fi network with a redirect page
 
 ## Guide Structure
 
-Each lab is a standalone module with prerequisites listed at the top. Follow them in order for a complete build, or jump to what you need if you already have a running config.
+**Labs 00-05 — Day 1: the router**
+Tools, connecting, the Terminal, certificates and HTTPS, containers, and User Manager.
 
-**Labs 01-06 — Foundation**
-Initial setup, packages, USB storage, containers, MAC access, and backup.
+**Labs 06-09 — The mAP**
+Setting up the mAP and the tunnel, enterprise Wi-Fi, RoMON, and client certificates (EAP-TLS).
 
-**Labs 07-10 — VLANs and Infrastructure**
-Single-bridge VLAN filtering, DHCP, port testing, and firewall isolation.
+**Labs 10-11 — Cloud**
+MikroTik Cloud and Back to Home.
 
-**Labs 11-12 — Security**
-Wireless AP and RADIUS/WPA2-Enterprise with User Manager.
+**Labs 12-13 — Dual WAN**
+Wi-Fi as a second internet connection, and the button script.
 
-**Lab 13 — mAP Setup**
-Setting up the mAP as a managed AP with fallback access and management Wi-Fi.
+**Labs 14-16 — Services**
+File transfer (TFTP and FTP), the media center (SMB and DLNA), and guest Wi-Fi.
 
-**Labs 14-16 — VPN**
-WireGuard server, WireGuard clients, and Cloud/Back to Home.
+**Labs 17-18 — Wrap-up**
+Production readiness, and RSC files.
 
-**Lab 17 — mAP Advanced**
-WireGuard tunnel from mAP to main router, RoMON remote management.
+**Advanced Labs**
+Labs of your pick from the full guide.
 
-**Lab 18 — Scripting**
-RSC files, configuration scripts, and automated deployment.
-
-**Labs 19-20 — Enterprise Integration**
-ICX switch integration and RUCKUS AP integration.
-
-**Labs 21-24 — Tools and Services**
-Traffic analysis, TFTP/FTP/graphing, DLNA/SMB media server, and NTP.
-
-**Labs 25-27 — WAN and Guest Access**
-WAN sources (USB tethering, cellular, Wi-Fi client mode), dual-WAN failover, and hotspot captive portal.
-
-**Lab 28 — DNS Advanced**
-Static entries, DNS over HTTPS, and ad blocking.
-
-**Lab 29 — Administrative Tasks**
-Router identity, passwords, software upgrades, user management, scheduled tasks, and logging.
-
-> **Note:** Any sub-lab numbered X.9 (e.g., Lab 5.9, Lab 29.9) is optional or reference material. These cover advanced topics, alternative approaches, or background information that isn't required to complete the core build.
-
-## Quick Start
-
-1. Get a MikroTik L009/RB5009/hEX S (or any RouterOS v7 device)
-2. Start at Lab 1
-3. Work through the labs in order
-4. Break things, restore from backup (Lab 3), try again
+**Appendix A — If You Fall Behind**
+Reset a device and load a completed file.
 
 ## Prerequisites
 
-- A MikroTik device running RouterOS v7
-- A laptop with an Ethernet port (or USB-to-Ethernet adapter)
-- WinBox (download from mikrotik.com) or a web browser
-- An Ethernet cable
-- A USB drive (for container storage)
+- A laptop with an Ethernet port (or a USB-to-Ethernet adapter)
+- WinBox 4 and a web browser. VLC is used in Lab 15.
+- Your kit: an L009, a mAP, a USB drive, and Ethernet cables
 
 ## Security Notice
 
@@ -109,37 +88,40 @@ In particular: **never expose SSH (port 22) to the public internet.** In Septemb
 
 ```
 labs/
-├── lab-01.md    # Initial Configuration
-├── lab-02.md    # Packages & Extra Features
-├── lab-03.md    # Backup & Restore
-├── lab-04.md    # USB Storage
-├── lab-05.md    # Containers
-├── lab-06.md    # MAC Access & Discovery
-├── lab-07.md    # Bridges & VLANs
-├── lab-08.md    # DHCP Server
-├── lab-09.md    # DNS
-├── lab-10.md    # Firewall
-├── lab-11.md    # Wireless AP
-├── lab-12.md    # User Manager & RADIUS
-├── lab-13.md    # mAP Setup
-├── lab-14.md    # WireGuard Server
-├── lab-15.md    # WireGuard Clients
-├── lab-16.md    # Cloud & Back to Home
-├── lab-17.md    # mAP Advanced (WireGuard & RoMON)
-├── lab-18.md    # Scripting & RSC Files
-├── lab-19.md    # Enterprise Switch Integration
-├── lab-20.md    # Enterprise AP Integration
-├── lab-21.md    # Traffic Analysis
-├── lab-22.md    # Useful Tools
-├── lab-23.md    # Media Center
-├── lab-24.md    # Time & NTP
-├── lab-25.md    # WAN Sources
-├── lab-26.md    # Dual WAN Failover
-├── lab-27.md    # Hotspot & Captive Portal
-├── lab-28.md    # DNS Advanced
-└── lab-29.md    # Administrative Tasks
+├── lab-00.md      # Open Your Tools
+├── lab-01.md      # Connect Your Router and Laptop
+├── lab-02.md      # Meet the Terminal
+├── lab-03.md      # Certificates and HTTPS
+├── lab-04.md      # Containers
+├── lab-05.md      # User Manager (RADIUS Server)
+├── lab-06.md      # Set Up the mAP
+├── lab-07.md      # mAP Enterprise Wi-Fi (RADIUS Test)
+├── lab-08.md      # RoMON (Manage a Device Without an IP Address)
+├── lab-09.md      # Client Certificates and EAP-TLS
+├── lab-10.md      # MikroTik Cloud
+├── lab-11.md      # Back to Home
+├── lab-12.md      # Dual WAN (Wi-Fi as a Second Internet Connection)
+├── lab-13.md      # The Button Script
+├── lab-14.md      # File Transfer
+├── lab-15.md      # Media Center
+├── lab-16.md      # Guest Wi-Fi (Optional)
+├── lab-17.md      # Production Readiness (Draft)
+├── lab-18.md      # RSC Files
+├── advanced.md    # About the Advanced Labs
+├── lab-21.md      # Traffic Analysis
+├── lab-22.md      # Useful Tools
+├── lab-24.md      # Time & NTP
+├── lab-25.md      # WAN Sources
+├── lab-28.md      # DNS Advanced
+├── lab-29.md      # Administrative Tasks
+├── appendix-a.md  # If You Fall Behind
+├── appendix-b.md  # Reset Procedures
+├── appendix-c.md  # Additional MikroTik Capabilities
+├── appendix-d.md  # Network Diagrams
+└── appendix-e.md  # Useful Links
 ```
-> **Note:** Any sub-lab numbered X.9 (e.g., Lab 7.9, Lab 10.9) is optional or reference material. These cover advanced topics, alternative approaches, or background information that isn't required to complete the core build.
+
+> **Note:** Labs 19, 20, 23, 26, and 27 from the full guide are still in this folder. They are left out of the table of contents because the class covers their material elsewhere.
 
 ## About
 

@@ -1,142 +1,39 @@
-# Lab 2 — Storage, Packages, and Verification
+# Lab 2 — Meet the Terminal
 
 *Prerequisites: Lab 1*
 
-This lab prepares external storage, installs additional packages, downloads management tools, and verifies the router is ready for configuration.
+**Why:** Some steps in this class, starting with certificates, can only be done on the command line. Here you open the router's Terminal and learn how it differs from the terminal on your laptop. You also record the version and architecture of your router, and learn to find your way around the many windows WinBox opens.
 
----
+1. Click **New Terminal** in the left menu. It opens in its own window.
+2. Look at the prompt: `[admin@Student31] >`. The name in brackets is your router's identity.
+3. Type `/system/identity/print` and press **Enter**. The router answers `name:` followed by the identity you set in Lab 1.
+4. Click **System** in the left menu, then **Resources**.
+5. Find **Version** and **Architecture Name**. In **Lab Notes**, record **Version** in the **RouterOS Version** row and **Architecture Name** in the **Architecture** row, both in the **L009** column. For this router they read `7.24.5 (stable)` and `arm`.
 
-## 2.1 — Prepare USB Storage
+   > **Why:** The packages and containers you'll install later are built for one architecture. The L009 is `arm`, not `arm64`, and a package for the wrong one won't install.
 
-Containers and other features require storage beyond the router's internal flash. We'll format a USB drive now so it's ready when needed.
+   > **Note:** Ignore **Minimum Version**. It's not your RouterOS version.
 
-1. Insert a USB flash drive into the router's USB port.
+6. In the Terminal, run `/system/device-mode/print`. Look at two lines. `mode` should read `advanced`, and `container` should read `yes`. If both do, skip to step 11.
 
-2. Open a Terminal:
-   - **WebUI:** Click the **Terminal** button in the upper right
-   - **WinBox:** Click **New Terminal** in the left menu
+   > **Why:** Containers are turned off in RouterOS until the router's device mode allows them, and Lab 4 builds three. RoMON (Lab 8) also needs `mode` to be `advanced`. Your instructor set this before class, but check it now, because a router that reads differently can't do Lab 4.
 
-   > **Note:** On first launch, the Terminal asks if you want to see the software license. Enter `n` to skip this prompt.
-
-3. Verify the drive is detected:
-
-   ```
-   /disk print
-   ```
-
-   You should see the USB drive listed.
-
-4. Format the drive with ext4 filesystem:
-
-   ```
-   /disk format usb1 file-system=ext4 mbr-partition-table=no
-   ```
-
-   > **CRITICAL:** You must use ext4, not fat32. Containers will not run on fat32-formatted storage.
-
-   When prompted, click ```y``` to start the formatting
-
-5. Verify formatting completed:
-
-   ```
-   /disk print
-   ```
-
-   Confirm the drive shows the ext4 filesystem.
-
----
-
-## 2.2 — Identify Your Architecture and Version
-
-6. Click **Advanced** in the upper right to switch from Terminal back to the WebFig interface.
-
-7. Navigate to **System** → **Resources**
-
-8. Note the following values:
-   - **Architecture Name:** (e.g., `arm`, `arm64`, `x86`)
-   - **Version:** (e.g., `7.22 stable`)
-
-   You'll need both the architecture and exact version to download the correct packages.
-
----
-
-## 2.3 — Download Packages and WinBox
-
-9. In a new browser tab, navigate to **https://mikrotik.com/download**
-
-10. Scroll down to the section where it starts **RouterOS**, select your options in this order:
-    - **Architecture:** Select your architecture (e.g., ARM, ARM64, MIPSBE)
-    - **Channels:** Select **Stable**
-    - **Version:** Select the **exact version** that matches your router (from step 8)
-    
-    Under **EXTRA PACKAGES** click the **all packages** link to download the full package bundle.
-
-    > **CRITICAL:** The package version must exactly match your installed RouterOS version. If you're running 7.22 but download 7.20.8 packages, they will fail to install silently. Check System → Packages to confirm your version before downloading.
-
-    - **Wait for the download to complete before proceeding.**
-
-11. Scroll back up and click **WINBOX** in the top menu bar, then select your operating system:
-    - macOS (universal)
-    - Linux (64-bit)
-    - Windows (64-bit)
-
-12. **Extract the downloaded package zip file on your laptop.**
-
----
-
-## 2.4 — Upload Packages
-
-13. Switching back to the MikroTik Router, in the MikroTik WebUI, click **Files** in the left menu.
-
-14. Under **Actions** on the right, click **Upload**.
-
-15. Upload the following packages (at minimum):
-    - `container-[version]-[arch].npk`
-    - `user-manager-[version]-[arch].npk`
-
-    > **Tip:** If you can't see the `.npk` files, make sure you go to your downloads folder and unpack the zip file, see step 12 above.
-    > **Tip:** You can upload additional packages from the bundle now. They won't activate until you reboot, and unused packages don't consume significant space.
-
-17. Navigate to **System** → **Reboot** and click **Start** to install the packages.
-
-18. After reboot, verify packages installed by navigating to **System** → **Packages**. You should see `user-manager` in the list, and in the left hand menu you should see a new menu item for `Container` near the bottom.
-
----
-
-## 2.5 — Verify Time and DNS
-
-Before building containers, verify the router has accurate time and working DNS. Both are required for pulling container images.
-
-### Verify Time
-
-18. Navigate to **System** → **Clock**
-
-19. Confirm the date and time are approximately correct.
-
-    > **Note:** By default, MikroTik syncs time via NTP from cloud.mikrotik.com or DHCP-provided servers. If time is significantly wrong, check your WAN connection. We'll cover detailed NTP configuration in Lab 24.
-
-### Verify DNS
-
-20. Open a Terminal and test DNS resolution:
-
-    ```
-    /ping google.com count=3
-    ```
-
-    If this resolves and pings successfully, DNS is working. Press `Ctrl+C` to cancel if you need to stop the ping early.
-
-    > **Why this matters:** Containers pull images from the internet using domain names. If DNS fails, container deployment fails.
-
-### If DNS Fails
-
-If the ping command fails to resolve, add public DNS servers as a fallback:
+7. If either line reads differently, run:
 
 ```
-/ip dns set servers=8.8.8.8,1.1.1.1
+/system/device-mode/update mode=advanced container=yes
 ```
 
-Then retry the ping test.
+   Run this whichever of the two lines was wrong.
 
----
+8. The Terminal tells you to confirm the change within 5 minutes. Press the **mode button** on the router and hold it for a few seconds. The router reboots.
 
-Once you have successfully completed all the steps here, feel free to move on to Lab 03.
+   > **Note:** The command alone changes nothing. Until you confirm, the old values stay.
+
+9. Watch WinBox. It shows **Disconnected**, then logs you back in automatically. If it doesn't after a few minutes, reconnect the way you did in Lab 1.
+
+10. Run `/system/device-mode/print` again. `mode` reads `advanced`, and `container` reads `yes`. If either still reads differently, tell your instructor.
+
+11. Look at the top of WinBox, next to the **Workspace** drop-down. The number beside the window icon is how many windows are open. Click it to see the list, which shows each window with the menu path that opened it. Click a window to bring it to the front. **X** closes one window, and **Close All** clears the list.
+
+> **Note:** The Terminal is the **router's** command line, not your laptop's. Commands typed here run on the MikroTik. Your laptop's Terminal or Command Prompt can't run them.

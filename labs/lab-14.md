@@ -1,181 +1,219 @@
-# Lab 14 — WireGuard Clients
+# Lab 14 — File Transfer
 
-*Prerequisites: Lab 12 (WireGuard server configured)*
+*Prerequisites: Lab 0 (the portal), Lab 4 (your USB drive is formatted and shows up as `usb1`)*
 
-This lab covers connecting peers to your WireGuard server:
-- **13.1** — MikroTik-to-MikroTik (site-to-site)
-- **13.2** — Laptop/desktop client (road warrior)
+**Why:** Network gear often needs a TFTP server, for firmware images and configuration files. MikroTik has one built in, and it can serve files from your USB drive without a laptop attached. In this lab you serve one test file from your L009 over TFTP and fetch it back. Then you turn on FTP and move files to and from your USB drive, including a large one.
 
----
+### 14.1 Get the test file
 
-## Lab 14.1 — MikroTik-to-MikroTik (Site-to-Site)
+1. On the portal, in the **Downloads** card, click **tftp-test.txt**. Look near the address bar for **Insecure download blocked**, and click **Keep**.
+2. Open your **Downloads** folder. The file `tftp-test.txt` is 128,159 bytes (Finder shows about 128 KB).
+3. Note its fingerprint, so you can check later that the copy you fetch is identical. In a terminal on your laptop, run the command for your system:
 
-> **Prerequisite:** This lab requires a second MikroTik device (such as a mAP). If you haven't set up your second device yet, skip to Lab 14.2 and return to this lab after completing Lab 13.
+   **macOS:**
 
-This scenario connects a second MikroTik (like a mAP) back to your main router. Useful for:
-- Remote office connectivity
-- Portable lab kit that phones home
-- Class scenarios with multiple devices
+```
+shasum -a 256 tftp-test.txt
+```
 
-### On the Remote MikroTik (Client Side)
+   **Windows:**
 
-1. Navigate to **WireGuard** and click **New**:
-   - **Name:** wg-home
-   - **MTU:** 1420
-   - **Listen Port:** 51820
+```
+certutil -hashfile tftp-test.txt SHA256
+```
 
-2. Click **Apply** & **OK**
+   The fingerprint ends in `da74d78c`. The full value is:
 
-3. Copy the **Public Key** from this interface:
+```
+28f66f7377aea106ef265e37fb19e321349fc612811a117efd5578d9da74d78c
+```
 
-   > **Remote Site Public Key:** ________________________________
+### 14.2 Put it on the USB drive
 
-4. Navigate to **IP** → **Addresses** and click **New**:
-   - **Address:** 10.255.255.2/24
-   - **Network:** 10.255.255.0
-   - **Interface:** wg-home
-   - **Comment:** WireGuard to home
+4. **L009 window:** click **New Terminal** and run `/disk/print`. `usb1` is in the list, mounted.
+5. Click **Files**, then use the upload button and pick `tftp-test.txt`. It lands in the root of **Files**.
 
-5. Click **Apply** & **OK**
+   > **Note:** Dragging a file from your computer into WinBox doesn't work. Use the upload button.
 
-### Add Peer on Remote MikroTik
+6. In the **Files** list, drag `tftp-test.txt` onto the `usb1` folder.
+7. In the Terminal, run:
 
-6. Navigate to **WireGuard** → **Peers** tab
+```
+/file/print where name~"tftp"
+```
 
-7. Click **Add New** and configure:
-   - **Interface:** wg-home
-   - **Public Key:** [Server Public Key from Lab 12.1]
-   - **Endpoint:** [your DDNS address from Lab 12.4]
-   - **Endpoint Port:** 51820
-   - **Allowed Address:** 10.255.255.0/24, 10.10.0.0/16
-   > Click the **+** button to the right of the first field to add a second field for the second IP range.
-   - **Persistent Keepalive:** 00:00:25 (25 seconds)
+The list shows `usb1/tftp-test.txt`, `.txt file`, about `125.2KiB`.
 
-   > **Note:** Allowed Address defines what traffic goes through the tunnel. Include the VPN subnet (10.255.255.0/24) and your lab networks (10.10.0.0/16).
+### 14.3 Turn on the TFTP server
 
-8. Click **Apply** and **OK**
+8. Click **IP**, then **TFTP**, then **New**. Set:
+   - **Req. Filename:** `tftp-test.txt` (the name a client asks for)
+   - **Real Filename:** `usb1/tftp-test.txt` (where the file really is, with no leading slash)
+   - **Allow:** checked
+   - **Read Only:** checked
+   - **IP Addresses:** leave blank, so any client can read it
 
-### Add Peer on Server MikroTik (Your Main Router)
+   Click **Apply**, then **OK**.
 
-9. On your main router, navigate to **WireGuard** → **Peers**
+9. In the Terminal, run:
 
-10. Click **Add New** and configure:
-    - **Interface:** wg-server
-    - **Public Key:** [Remote Site Public Key from step 3]
-    - **Allowed Address:** 10.255.255.2/32
-    - **Comment:** Remote MikroTik
+```
+/ip/tftp/print
+```
 
-    > **Note:** We don't set Endpoint here because the remote site initiates the connection. The server learns the endpoint dynamically.
+The entry shows `tftp-test.txt` mapped to `usb1/tftp-test.txt`, **Allow** `yes`, **Read Only** `yes`, and **Hits** `0`.
 
-11. Click **Apply** and **OK**
+> ### ⚠️ STOP AND READ
+> TFTP has no login. Anyone who can reach your L009 can read every file you map. Keep **Read Only** checked, and map only files you mean to share.
 
-### Verify Connection
+### 14.4 Fetch the file from your laptop
 
-12. On the remote MikroTik, navigate to **WireGuard** → **Peers**
+10. **macOS:** open a terminal on your laptop. Use a fresh folder, so the download doesn't mix with the file in **Downloads**:
 
-13. Check the **Last Handshake** column — it should show a recent timestamp.
+```
+mkdir -p ~/tftp-got && cd ~/tftp-got
+tftp 192.168.88.1
+```
 
-14. Test connectivity:
-    ```
-    /ping 10.255.255.1
-    ```
+11. At the `tftp>` prompt, type `get tftp-test.txt`. It prints `Received 128159 bytes during 0.1 seconds in 251 blocks`. Type `quit`.
 
-15. If the ping succeeds, the tunnel is working.
+    > **Why:** TFTP sends a file in 512-byte blocks, and 128,159 bytes comes to 251 of them.
 
-### Add Route for Lab Networks (Remote Side)
+12. Check the copy:
 
-For the remote MikroTik to reach your lab networks (10.10.x.x), add a route:
+```
+ls -l tftp-test.txt
+shasum -a 256 tftp-test.txt
+```
 
-16. Navigate to **IP** → **Routes**
+The size is `128159` and the fingerprint matches the one in step 3, all 64 characters. A match means the file arrived intact.
 
-17. Click **Add New**:
-    - **Dst. Address:** 10.10.0.0/16
-    - **Gateway:** 10.255.255.1
-    - **Comment:** Lab networks via WireGuard
+13. **L009 Terminal:** run `/ip/tftp/print`. **Hits** now reads `1`. The server counts each request it answers.
 
-18. Click **Apply** and **OK**
+> **Note:** `192.168.88.1` is your L009's backdoor address. Use the address of whichever network your laptop is on.
 
----
+### 14.5 Turn on the FTP service
 
-## Lab 14.2 — Laptop/Desktop Client (Road Warrior)
+FTP moves files in both directions and handles large files that WinBox's upload button struggles with. Your L009's setup turns the FTP service off, so you turn it on.
 
-This scenario lets you connect a laptop or desktop to your network from anywhere using the WireGuard app. For phones and tablets, see Lab 15 (Back to Home) — the MikroTik app makes mobile setup much simpler.
+14. **L009 window:** click **IP**, then **Services**. Double-click **ftp**. It shows as disabled.
+15. Check **Enabled**, leave **Port** at `21`, and set **Available From** to `192.168.88.0/24`. Click **OK**.
+16. In the Terminal, run:
 
-### Install WireGuard on Your Laptop
+```
+/ip/service/print where name=ftp
+```
 
-Before configuring the MikroTik, install the WireGuard client on your laptop:
+The line shows `21`, `tcp`, and `192.168.88.0/24`, and has no **X** in front of it.
 
-- **Windows:** Download from https://wireguard.com and install
-- **macOS:** Install from the App Store or https://wireguard.com
-- **Linux:** Install for your distribution (e.g., `sudo apt install wireguard`)
+> **Note:** FTP sends passwords in plain text. **Available From** limits who can reach it, so keep it to your own network.
 
-### Create Peer on the Server
+### 14.6 Create two FTP users
 
-1. On your main router, navigate to **WireGuard** → **Peers**
+You make one user who can only read files and one who can also write. Writing is how large files get onto your USB drive.
 
-2. Click **Add New** and configure:
-    - **Name:** Laptop Client
-    - **Interface:** wg-server
-    - **Private Key:** Click the **+** (plus) button next to the field, then select **auto** from the dropdown — this generates a keypair for the client
-    - **Allowed Address:** 10.255.255.10/32
+17. Click **System**, then **Users**, then the **Groups** tab, then **New**. Set **Comment** to `FTP Write`. Set **Name** to `ftp-write`. Under **Policies**, check `ftp`, `read`, and `write`, and leave every other policy unchecked. Click **Apply**, then **OK**.
+18. Click **New** again. Set **Comment** to `FTP Read`. Set **Name** to `ftp-read`. Check `ftp` and `read` only. Click **Apply**, then **OK**.
+19. Click the **Users** tab, then **New**. Set **Name** to `ftpwrite`, **Group** to `ftp-write`, and **Allowed Address** to `192.168.88.0/24`. Enter a throwaway password in **Password** and **Confirm Password**. Click **Apply**, then **OK**.
+20. Click **New** again. Set **Name** to `ftpread`, **Group** to `ftp-read`, and **Allowed Address** to `192.168.88.0/24`. Enter a different throwaway password. Click **Apply**, then **OK**.
+21. Record both passwords in **Lab Notes**.
+22. In the Terminal, run:
 
-3. Scroll down to the **Client** fields and configure:
-    - **Client Address:** 10.255.255.10/32
-    - **Client DNS:** 10.10.255.1
-    - **Client Endpoint:** [your DDNS address from Lab 12.4]
-    - **Client Keepalive:** 00:00:25
-    - **Client Allowed Address:** Remove `::/0` and add `10.10.0.0/16` and `10.255.255.0/24`
-    > Click the **+** button to the right of the first field to add a second field for the second IP range.
+```
+/user/group/print where name~"ftp"
+/user/print where name~"ftp"
+```
 
-4. Click **Apply**
+Both groups show their policies, with every unchecked policy marked `!`, such as `!winbox`, `!ssh`, and `!policy`. `ftp-read` also shows `!write`. Both users are listed with their groups and `192.168.88.0/24`.
 
-   > **Note:** The **Public Key**, **Client Config**, and **Client QR** fields will be blank until after you click Apply. They populate automatically once the keypair is generated.
+### 14.7 Test the read-only user
 
-5. After applying, two fields at the bottom will populate:
-    - **Client Config** — a complete WireGuard configuration file, ready to paste
-    - **Client QR** — a QR code for mobile devices
+Run the next commands in a terminal on your laptop, in the folder where you saved `tftp-test.txt` in 14.4 (`tftp-got`). Each command asks for the password.
 
-6. Copy the entire contents of the **Client Config** field.
+> **Note:** **Windows:** type `curl.exe`, not `curl`. In PowerShell, `curl` is a different command.
 
-7. Click **OK**
+23. List your USB drive:
 
-### Configure the WireGuard Client
+```
+curl --user ftpread ftp://192.168.88.1/usb1/
+```
 
-8. Open the WireGuard app on your laptop.
+The listing shows `tftp-test.txt`, and the container folders from Lab 4 (`nginx`, `speedtest`, `iperf3`, and others), owned by `root`.
 
-9. Click **Add Tunnel** → **Add empty tunnel**
+24. Download the test file, and check it:
 
-10. Replace any existing content with the configuration you copied from step 6.
+```
+curl --user ftpread -o ftp-got.txt ftp://192.168.88.1/usb1/tftp-test.txt
+shasum -a 256 ftp-got.txt
+```
 
-11. Name the tunnel (e.g., "Lab Router")
+The fingerprint matches the one in step 3.
 
-12. Save the new tunnel.
+25. Try an upload. Make a small file first:
 
-13. If you are connected to your router through the backdoor port, switch to a connection that will put you on the WAN side of the router (an existing Wi-Fi connection).
+```
+printf 'ftp upload test\n' > ftp-up.txt
+curl --user ftpread -T ftp-up.txt ftp://192.168.88.1/usb1/
+```
 
-14. In the new tunnel, click on **Activate**.
+It fails with `curl: (25) Failed FTP upload: 550`. The read-only user can't write.
 
-> **Behind NAT?** If your MikroTik is behind another router (e.g., a lab or office setup), the DDNS endpoint won't work because the WireGuard port isn't forwarded. For local testing, edit the tunnel configuration and change the Endpoint to your MikroTik's local IP address (e.g., `10.22.251.56:51820`). For remote access behind NAT, see Lab 15 (Back to Home) which uses MikroTik's cloud relay to avoid port forwarding.
+### 14.8 Test the write user
 
-### Verify Connection
+26. Upload the same file with the write user:
 
-13. With the tunnel active, try to reach your MikroTik:
-   - Open browser to `http://10.10.255.1` (or any lab IP)
-   - Or ping 10.255.255.1 from terminal
+```
+curl --user ftpwrite -T ftp-up.txt ftp://192.168.88.1/usb1/
+```
 
-14. On your MikroTik, check **WireGuard** → **Peers** — you should see a recent handshake and traffic counters for the Laptop Client peer.
+It shows a progress line and no error.
 
-> **Note:** The QR code generated in step 5 can also be used with the WireGuard mobile app. Open the app, tap **+** → **Scan from QR code**, and point the camera at the QR code displayed on the MikroTik screen. This is the fastest way to set up a phone connection. We'll complete the full setup in Lab 15 next.
+27. **L009 Terminal:** run:
 
----
+```
+/file/print where name~"ftp-up"
+```
 
-## Lab 14 Summary
+The list shows `usb1/ftp-up.txt`, 16 bytes.
 
-You now have:
-- ✅ Site-to-site VPN between two MikroTik devices
-- ✅ Road warrior configuration for phones/laptops
-- ✅ Full access to your lab networks from anywhere
+### 14.9 Try a large file (macOS and Linux)
 
-WireGuard is now your secure tunnel back home.
+28. Make a 10 MB file of random data. Type the file name without `~/`:
 
----
+```
+dd if=/dev/urandom of=ftp-test-10mb.bin bs=1048576 count=10
+```
+
+It ends with `10485760 bytes transferred`.
+
+   > **Note:** The shell doesn't expand `~` after `of=`. A name like `~/tftp-got/file` fails with `No such file or directory`.
+
+29. Upload it with the write user:
+
+```
+curl --user ftpwrite -T ftp-test-10mb.bin ftp://192.168.88.1/usb1/
+```
+
+The progress line shows a `10.0M` total and about 20 MB per second on the instructor's router.
+
+30. **L009 Terminal:** run `/file/print where name~"usb1/ftp-test"`. The list shows `usb1/ftp-test-10mb.bin` at `10.0MiB`.
+
+    > **Note:** Include `usb1/` in the pattern. Without it, `ftp-test` also matches `tftp-test.txt`.
+31. Pull it back with the read-only user and compare:
+
+```
+shasum -a 256 ftp-test-10mb.bin
+curl --user ftpread -o ftp-back.bin ftp://192.168.88.1/usb1/ftp-test-10mb.bin
+shasum -a 256 ftp-back.bin
+```
+
+The two fingerprints are identical.
+
+32. **L009 Terminal:** remove the test files from the drive:
+
+```
+/file/remove [find where name~"usb1/ftp-"]
+```
+
+> ### ⚠️ STOP AND READ
+> The read-only user can still read everything on the drive, and probably more of the router's files. I only listed `usb1/`. Don't give out `ftpread` outside the lab, and don't leave exported certificates or keys in **Files**.
