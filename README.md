@@ -29,7 +29,7 @@ RouterOS v7 is identical across every MikroTik platform — hEX S, L009, RB5009,
 
 Before class, your L009 and mAP were built from two script files (RSC files). The bridges, VLANs, DHCP servers, firewall, and the other plumbing are already in place. You spend your time on what a script can't do: certificates, containers, passwords, the tunnel, and Wi-Fi.
 
-**Day 1** is Labs 00 to 05, then Labs 14 and 15. That takes you from a connected router to certificates and HTTPS, three containers, a RADIUS server, and file and media services. **Day 2** is Labs 06 to 09 (the mAP, the tunnel, enterprise Wi-Fi, and RoMON), then your pick from Labs 10 to 13, Lab 16, Lab 17, and the advanced labs. Lab 18 and Appendix A come at the end. Near the end of Day 2 the instructor posts a completed file for each device, and Appendix A shows how to use them if you fall behind.
+**Day 1** is Labs 00 to 05, then Labs 15 and 16. That takes you from a connected router to certificates and HTTPS, three containers, a RADIUS server, and file and media services. **Day 2** is Labs 06 to 09 (the mAP, the tunnel, enterprise Wi-Fi, and RoMON), then Labs 10 to 12 (Cloud, Back to Home, and Traffic Analysis), then your pick from Labs 13 and 14, Lab 17, Lab 18, and the advanced labs. Lab 19 and Appendix A come at the end. Near the end of Day 2 the instructor posts a completed file for each device, and Appendix A shows how to use them if you fall behind.
 
 ## What You'll Build
 
@@ -39,6 +39,7 @@ Before class, your L009 and mAP were built from two script files (RSC files). Th
 - A WireGuard tunnel from the mAP to the L009
 - RoMON management of a device that has no IP address
 - MikroTik Cloud and Back to Home
+- Packet captures of your own traffic, including the RADIUS login, read in Wireshark
 - Wi-Fi as a second internet connection, with failover and a hardware button that switches modes
 - TFTP, FTP, SMB, and DLNA file services from a USB drive
 - A guest Wi-Fi network with a redirect page
@@ -51,23 +52,23 @@ Tools, connecting, the Terminal, certificates and HTTPS, containers, and User Ma
 **Labs 06-09 — The mAP**
 Setting up the mAP and the tunnel, enterprise Wi-Fi, RoMON, and client certificates (EAP-TLS).
 
-**Labs 10-11 — Cloud**
-MikroTik Cloud and Back to Home.
+**Labs 10-12 — Cloud and traffic analysis**
+MikroTik Cloud, Back to Home, and Traffic Analysis with Torch and the packet sniffer.
 
-**Labs 12-13 — Dual WAN**
+**Labs 13-14 — Dual WAN**
 Wi-Fi as a second internet connection, and the button script.
 
-**Labs 14-16 — Services**
+**Labs 15-17 — Services**
 File transfer (TFTP and FTP), the media center (SMB and DLNA), and guest Wi-Fi.
 
-**Labs 17-18 — Wrap-up**
+**Labs 18-19 — Wrap-up**
 Production readiness, and RSC files.
 
-**Advanced Labs**
-Labs of your pick from the full guide.
+**Advanced Labs 20-22**
+Graphing and bandwidth test, time and NTP, and DNS.
 
-**Appendix A — If You Fall Behind**
-Reset a device and load a completed file.
+**Appendices**
+A: If You Fall Behind. B: Reset Procedures. C: Additional MikroTik Capabilities. D: Network Diagrams. E: Useful Links. F: Administrative Cheat Sheet.
 
 ## Prerequisites
 
@@ -100,28 +101,25 @@ labs/
 ├── lab-09.md      # Client Certificates and EAP-TLS
 ├── lab-10.md      # MikroTik Cloud
 ├── lab-11.md      # Back to Home
-├── lab-12.md      # Dual WAN (Wi-Fi as a Second Internet Connection)
-├── lab-13.md      # The Button Script
-├── lab-14.md      # File Transfer
-├── lab-15.md      # Media Center
-├── lab-16.md      # Guest Wi-Fi (Optional)
-├── lab-17.md      # Production Readiness (Draft)
-├── lab-18.md      # RSC Files
+├── lab-12.md      # Traffic Analysis
+├── lab-13.md      # Dual WAN (Wi-Fi as a Second Internet Connection)
+├── lab-14.md      # The Button Script
+├── lab-15.md      # File Transfer
+├── lab-16.md      # Media Center
+├── lab-17.md      # Guest Wi-Fi (Optional)
+├── lab-18.md      # Production Readiness (Draft)
+├── lab-19.md      # RSC Files
 ├── advanced.md    # About the Advanced Labs
-├── lab-21.md      # Traffic Analysis
-├── lab-22.md      # Useful Tools
-├── lab-24.md      # Time & NTP
-├── lab-25.md      # WAN Sources
-├── lab-28.md      # DNS Advanced
-├── lab-29.md      # Administrative Tasks
+├── lab-20.md      # Graphing and Bandwidth Test
+├── lab-21.md      # Time and NTP
+├── lab-22.md      # DNS
 ├── appendix-a.md  # If You Fall Behind
 ├── appendix-b.md  # Reset Procedures
 ├── appendix-c.md  # Additional MikroTik Capabilities
 ├── appendix-d.md  # Network Diagrams
-└── appendix-e.md  # Useful Links
+├── appendix-e.md  # Useful Links
+└── appendix-f.md  # Administrative Cheat Sheet
 ```
-
-> **Note:** Labs 19, 20, 23, 26, and 27 from the full guide are still in this folder. They are left out of the table of contents because the class covers their material elsewhere.
 
 ## About
 

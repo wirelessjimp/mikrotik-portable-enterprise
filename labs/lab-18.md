@@ -1,134 +1,143 @@
-# Lab 18 — RSC Files
+# Lab 18 — Production Readiness (Draft)
 
-*Prerequisites: Lab 0 (the portal and Lab Notes), Lab 1 (your L009), Lab 6 (your mAP, and a WinBox window for each device). Do this near the end, after the labs you plan to finish.*
+*Prerequisites: Labs 1 to 17, whichever you built, and your **Lab Notes** file filled in.*
 
-**Why:** Your devices were built from two script files before class. Here you find out what a script file is, make one from your own device, run one, and see why a script behaves differently on an empty device than on a device that already has a configuration. That last part is why the completed files posted at the end of Day 2 work the way they do.
+**Why:** The class left things open on purpose: shared passwords, exported keys, services switched on, and shares that offered more than you meant. This lab closes them, and shows what to check before you use this gear for real.
 
-### 18.1 Back up both devices first
+> ### ⚠️ STOP AND READ
+> This lab is a draft. It was read through and its commands checked where they could be, but not every step has been run on a kit. Don't restrict a service until you have another way in. The backdoor port (**ether7**, at `192.168.88.1`) is your permanent way in, so keep it. Before step 13, turn on Safe Mode, the switch in WinBox's top bar, so a change that locks you out undoes itself. See Appendix B.
 
-1. **L009 window:** click **Files**, then click **Backup** under **Actions**.
-2. Set **Name** to `Student31-l009-before-rsc`. Use your own label (`Student01` to `Student12`). Leave the password blank, click **Don't Encrypt**, then click **Backup Config**.
-3. Select `Student31-l009-before-rsc.backup` in the list and click **Download...** under **Actions**.
-4. **mAP window:** do steps 1 to 3 again, with the name `Student31-mAP-before-rsc`. Download it now, not later. A backup has disappeared from the mAP's **Files** list after a restart before.
-5. Open your **Downloads** folder and check that both files are there. On the instructor's router they were about 90 KB and 34 KB.
+### 18.1 Change every classroom credential
 
-   > **Why:** Nothing in this lab is meant to break your devices. A backup is your way back if something does. It holds a device's whole configuration, including the Wi-Fi keys and passwords that an export leaves out.
+Everything in **Lab Notes** was a throwaway, and the instructor's script gave every kit the same starting values for some of them. Change each one, and record the new value.
 
-> ### 🔐 Treat the backups like passwords
-> They aren't encrypted, and each one holds a whole configuration. Delete both from your laptop when class ends (Lab 17.2).
-
-### 18.2 What an RSC file is
-
-An RSC file is a plain text file of RouterOS commands, one after another, the same commands you type in the Terminal. You've already used two. Before class, the instructor imported `class-student-l009.rsc` onto your L009 and `class-student-map.rsc` onto your mAP, both on empty devices. That is how your kit arrived with its bridges, DHCP servers, and firewall already in place.
-
-| | Backup | RSC file |
+| Credential | Where you set it | First set in |
 |---|---|---|
-| Extension | `.backup` | `.rsc` |
-| Contents | A binary copy of one device's whole configuration | Plain text commands you can read and edit |
-| Use it to | Put the same device back as it was | Build a device from a list, or build many from one list |
+| L009 admin password | **System**, **Password** | Lab 1.4 |
+| mAP admin password | **System**, **Password** | Lab 6.3 |
+| Fallback Wi-Fi key | **Wireless**, **Security Profiles**, `fallback-security` | Lab 7.1 |
+| RoMON secret, on both devices | **Tools**, **RoMON** | Lab 8.3 |
+| RADIUS secret, in three places: the L009's User Manager router entries `mikrotik-ap` and `mikrotik-map-tunnel`, and the mAP's **RADIUS** client | User Manager and **RADIUS** | Lab 5, Lab 7.3, Lab 7.4 |
+| `user2` | User Manager | Lab 5 |
+| `ftpwrite` and `ftpread` | **System**, **Users** | Lab 15.6 |
+| `smbuser` | **IP**, **SMB**, **Users** | Lab 16.4 |
+| Hotspot `admin` | **IP**, **Hotspot**, **Users** | 18.5 below |
 
-### 18.3 Make one from your own device
+1. For each row, set a new password and enter it in **Lab Notes**. Use the dialog in WinBox. Don't type a password into a Terminal command, where it stays in the command history.
+2. Save **Lab Notes** (Lab 0, steps 4 and 5).
 
-6. **L009 Terminal:** run this, with your own label:
+### 18.2 Delete exported keys and backups
 
-```
-/export file=Student31-l009-export
-```
-
-7. **mAP Terminal:** run this, with your own label:
-
-```
-/export file=Student31-mAP-export
-```
-
-8. In each window, click **Files**, select the new `.rsc` file, and click **Download...**. Download the mAP's file now.
-9. Open both files in a text editor on your laptop. Don't save any changes. Each section starts with a line that begins with `/`, followed by `add` or `set` lines. Search each file for your label, such as `Student31`. You find the identity you set in Lab 1 and Lab 6.
-10. Search the mAP's file for `wpa2-pre-shared-key`. Nothing matches, although your fallback network has a key.
-
-   > **Why:** RouterOS leaves passwords, keys, and secrets out of an export on purpose, and it lists only the settings that differ from a device's defaults. A script built from an export needs its secrets put back by hand.
-
-### 18.4 Run one
-
-11. **L009 Terminal:** make a one-line script on the router itself, so no editor is involved, and look at it:
+3. **L009 Terminal:** list the files that hold certificates or keys:
 
 ```
-/file/add name=rsc-demo.rsc contents="/interface/bridge/add name=rsc-demo"
-/file/print detail where name=rsc-demo.rsc
+/file/print where name~"p12|key|crt"
 ```
 
-The list shows `type=script`, `size=35`, and your line under `contents`.
+On the instructor's router it listed four files, all in the `Certificates` folder, and nothing else.
 
-   > **Note:** `/file/get rsc-demo.rsc contents` prints nothing, even though the contents are there. Use `print detail`.
+4. Remove each one you exported, by name. For example, `/file/remove Certificates/user1-client.p12`.
 
-12. Run the script:
+   > **Why:** A `.p12` and a `.key` hold a private key. Anyone who can log in to FTP with the read-only user can download them.
 
-```
-/import file-name=rsc-demo.rsc
-```
-
-It prints `Script file loaded and executed successfully`.
-
-13. Check what it did:
+5. Delete the same files from your laptop and from your phones' **Downloads** folders.
+6. On both devices, list the backups:
 
 ```
-/interface/bridge/print where name=rsc-demo
+/file/print where name~"backup"
 ```
 
-The list shows a bridge named `rsc-demo`, running. The import typed the command for you.
-
-### 18.5 An empty device, and a device that already has a configuration
-
-14. Run the same script again:
+7. Each device keeps an automatic backup from before its last reset. If it holds an old configuration, delete it. **mAP Terminal:**
 
 ```
-/import file-name=rsc-demo.rsc
+/file/remove flash/auto-before-reset.backup
 ```
 
-It prints `Script Error: failure: already have interface with name rsc-demo (/interface/bridge/add; line 1)`. It names the command and the line.
-
-   > **Why:** The script was written as if the bridge didn't exist. On an empty device that is true, and it works. On your device the bridge is already there, so the first line fails.
-
-15. Now a script of two lines. The first fails, and the second would work:
+   **L009 Terminal:** its copy sits in the root of **Files**, not in `flash`:
 
 ```
-/file/add name=rsc-demo-two.rsc contents="/interface/bridge/add name=rsc-demo\n/interface/bridge/add name=rsc-demo2"
-/import file-name=rsc-demo-two.rsc
-/interface/bridge/print terse where name~"rsc-demo"
+/file/remove auto-before-reset.backup
 ```
 
-The import fails on line 1 again. The list shows only `rsc-demo`. The second line never ran.
+8. Delete `mAP-preDualWAN-config.backup` from your laptop. If you did Lab 19, delete `Student31-l009-before-rsc.backup` and `Student31-mAP-before-rsc.backup` too, and the two export files from 19.3. If you did Lab 12, delete its capture file, `Student31-ping.pcapng`, from your laptop too.
 
-   > **Why:** An import stops at its first error. On a device that already has part of a configuration, a script stops at the first item that exists and skips everything after it. That leaves the device half built.
+> **Note:** Deleting the files doesn't delete the certificates. They stay in the router's certificate store.
 
-16. Now the same command, wrapped so a failure doesn't stop the script:
+### 18.3 Back to Home and the MikroTik app
 
-```
-/file/add name=rsc-demo-wrapped.rsc contents=":do { /interface/bridge/add name=rsc-demo } on-error={ :log info \"rsc-demo: bridge exists or failed\" }"
-/import file-name=rsc-demo-wrapped.rsc
-/log/print where message~"rsc-demo"
-```
+9. **L009 window:** close the **BTH VPN WireGuard** tab. It shows a key and a QR code that let a device into your network. Don't photograph it.
 
-The import prints `Script file loaded and executed successfully`. The log ends with `rsc-demo: bridge exists or failed`.
+   > **Note:** Leave the Back to Home tunnel in place. It's meant to be used again: the router updates its address by itself when you plug it in somewhere else, and the phone reconnects. The tunnel's peer is created by the feature itself (it shows the **D** flag, for dynamic), so it isn't yours to remove with `/remove`. To drop the connection, delete the VPN from the phone's settings. The router's `/ip/cloud/back-to-home-users` menu lists the users the app added. Revoking the service can't be undone as a pause: you'd create the connection again from the app, and delete the old peer.
 
-   > **Why:** `:do { ... } on-error={ ... }` runs the command in the first braces. If it fails, RouterOS runs the part in the second braces, here a log line, and carries on. The `\"` is how you type a quote inside the text of a command. The instructor's completed files wrap their blocks this way.
+10. In the MikroTik app, **uncheck Keep password** on the login screen, and delete the saved router entries.
 
-### 18.6 Clean up
+### 18.4 Turn off what you don't need
 
-17. **L009 Terminal:** remove the demo bridge and the three demo files:
+11. **mAP Terminal:** list the services:
 
 ```
-/interface/bridge/remove [find name=rsc-demo]
-/file/remove [find name~"^rsc-demo"]
-/interface/bridge/print terse where name~"rsc-demo"
-/file/print where name~"rsc-demo"
+/ip/service/print
 ```
 
-The last two print nothing.
-
-### 18.7 What this means for the completed files
-
-At the end of Day 2 the instructor posts `class-complete-l009.rsc` and `class-complete-map.rsc`. Each rebuilds a device as far as a script can. Part of each file is wrapped, so a block that already exists is logged and skipped. The first part of the L009's file is not wrapped, so it expects an empty device and stops at its first error. That is why Appendix A has you reset the device first. After an import, read the log to see what failed:
+`ftp`, `telnet`, `www`, and `api` are enabled, and only the firewall's last rule blocks them. Turn them off, and list again. They show **X**.
 
 ```
-/log/print where message~"class-complete"
+/ip/service/disable ftp,telnet,www,api
+/ip/service/print
 ```
+
+12. **L009 Terminal:** turn FTP off, which Lab 15 turned on:
+
+```
+/ip/service/disable ftp
+```
+
+13. Restrict who can log in to the L009. Only your backdoor network and the tunnel get in:
+
+```
+/ip/service/set winbox available-from=192.168.88.0/24,10.255.255.0/24
+/ip/service/set ssh available-from=192.168.88.0/24,10.255.255.0/24
+/ip/service/set www-ssl available-from=192.168.88.0/24,10.255.255.0/24
+```
+
+   > **Why:** A phone on the enterprise SSID may be able to reach the L009's login at `10.10.255.1` with the admin password, because the mAP passes its traffic along. After this step the L009 answers only the two networks in the list. It also closes the class Wi-Fi path to the WAN address, which the setup's firewall rule `WAN Access from class Wi-Fi` had opened.
+
+   > **Note:** The HTTPS service, `www-ssl`, also serves the REST API. Limiting it here limits both. Appendix C has a link.
+
+14. Check that it worked. WinBox from your laptop on the backdoor still connects. From a phone on `Student31-EAP`, a login at `10.10.255.1` is refused.
+
+### 18.5 The hotspot `admin` user
+
+15. **L009 window:** click **IP**, then **Hotspot**, then the **Users** tab. Double-click `admin` and set a password. Or remove the user, if you don't need it.
+
+   > **Why:** It was created with no password. While the original login page was in place, that would have let a guest sign in with an empty password.
+
+### 18.6 Check how you reach the router
+
+16. From your laptop on the class Wi-Fi, try WinBox to your L009's WAN address from **Lab Notes**. After 18.4 it times out.
+17. From a phone off your network, use Back to Home (Lab 11) and open the MikroTik app at `10.10.255.1`. It still works, because that path comes through the tunnel.
+
+### 18.7 Read the firewall
+
+18. **L009 Terminal:** run:
+
+```
+/ip/firewall/filter/print where chain=input
+```
+
+Find `WAN Access from class Wi-Fi`, which accepts ports 443 and 8291 from `172.20.26.0/24` on the WAN list. After step 13 the services refuse that network anyway, so the rule no longer lets anyone in. It's harmless, and you can remove it if you'd rather not leave it. The last rule drops everything that doesn't come from the **LAN** list.
+
+19. **mAP Terminal:** run:
+
+```
+/ip/firewall/filter/print where chain=input
+/interface/list/member/print
+```
+
+`br-mgmt` is in the **WAN** list, `br-fallback` is in **LAN**, and `wlan1` is in neither. Read it, and change nothing.
+
+### 18.8 Things to know
+
+- **Enterprise clients share `br-fallback`.** They can reach the mAP's own services until you turn those off. The fuller fix is to put the enterprise SSID on its own bridge.
+- **Check Certificate** was turned off for the three container pulls in Lab 4. The router's CRL settings are on.
+- **Failover (Lab 13):** the L009's WAN client has **Check Gateway** set to `none`, so failover follows a dropped link only. The route `WAN2-via-mAP` still points at an address the mAP has only while it's on the jumper.

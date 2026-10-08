@@ -1,150 +1,219 @@
-# Lab 15 — Media Center
+# Lab 15 — File Transfer
 
-*Prerequisites: Lab 0 (the portal), Lab 4 (your USB drive shows up as `usb1`), Lab 14 (the FTP write user `ftpwrite`, and `tftp-test.txt` in your `tftp-got` folder). VLC is installed on your laptop for the second half.*
+*Prerequisites: Lab 0 (the portal), Lab 4 (your USB drive is formatted and shows up as `usb1`)*
 
-**Why:** SMB is the file sharing that works on Windows, macOS, Linux, iOS, and Android. In this lab you share a folder of media from your USB drive, and you lock it down so only one user can read it. On the way you find out that your L009's setup shares more than you meant it to. Then you stream a test video from the same folder with DLNA, using VLC.
+**Why:** Network gear often needs a TFTP server, for firmware images and configuration files. MikroTik has one built in, and it can serve files from your USB drive without a laptop attached. In this lab you serve one test file from your L009 over TFTP and fetch it back. Then you turn on FTP and move files to and from your USB drive, including a large one.
 
-### 15.1 Make the media folder
+### 15.1 Get the test file
 
-1. **L009 window:** click **New Terminal** and run:
+1. On the portal, in the **Downloads** card, click **tftp-test.txt**. Look near the address bar for **Insecure download blocked**, and click **Keep**.
+2. Open your **Downloads** folder. The file `tftp-test.txt` is 128,159 bytes (Finder shows about 128 KB).
+3. Note its fingerprint, so you can check later that the copy you fetch is identical. In a terminal on your laptop, run the command for your system:
 
-```
-/file/add name=usb1/media type=directory
-/file/print where name~"usb1/media"
-```
-
-The list shows `usb1/media` as a `directory`.
-
-   > **Note:** Your L009's setup already shares `/usb1/media` as **Lab Media Server**. Until now the folder didn't exist, so the share pointed at nothing.
-
-2. Put a file in the folder with FTP. In a terminal on your laptop, in your `tftp-got` folder, run the command for your system. Type `ftpwrite`'s password at the prompt. **Windows:** use `curl.exe`.
+   **macOS:**
 
 ```
-curl --user ftpwrite -T tftp-test.txt ftp://192.168.88.1/usb1/media/
+shasum -a 256 tftp-test.txt
 ```
 
-3. In the L009's Terminal, run:
+   **Windows:**
 
 ```
-/file/print where name~"usb1/media"
+certutil -hashfile tftp-test.txt SHA256
 ```
 
-The list shows `usb1/media` and `usb1/media/tftp-test.txt`, about `125.2KiB`.
-
-### 15.2 See what a guest can see
-
-4. **macOS:** in a terminal on your laptop, ask the L009 which shares it offers to someone with no login:
+   The fingerprint ends in `da74d78c`. The full value is:
 
 ```
-smbutil view -g //192.168.88.1
+28f66f7377aea106ef265e37fb19e321349fc612811a117efd5578d9da74d78c
 ```
 
-The list shows two shares: `usb1` and `Lab Media Server`.
+### 15.2 Put it on the USB drive
+
+4. **L009 window:** click **New Terminal** and run `/disk/print`. `usb1` is in the list, mounted.
+5. Click **Files**, then use the upload button and pick `tftp-test.txt`. It lands in the root of **Files**.
+
+   > **Note:** Dragging a file from your computer into WinBox doesn't work. Use the upload button.
+
+6. In the **Files** list, drag `tftp-test.txt` onto the `usb1` folder.
+7. In the Terminal, run:
+
+```
+/file/print where name~"tftp"
+```
+
+The list shows `usb1/tftp-test.txt`, `.txt file`, about `125.2KiB`.
+
+### 15.3 Turn on the TFTP server
+
+8. Click **IP**, then **TFTP**, then **New**. Set:
+   - **Req. Filename:** `tftp-test.txt` (the name a client asks for)
+   - **Real Filename:** `usb1/tftp-test.txt` (where the file really is, with no leading slash)
+   - **Allow:** checked
+   - **Read Only:** checked
+   - **IP Addresses:** leave blank, so any client can read it
+
+   Click **Apply**, then **OK**.
+
+9. In the Terminal, run:
+
+```
+/ip/tftp/print
+```
+
+The entry shows `tftp-test.txt` mapped to `usb1/tftp-test.txt`, **Allow** `yes`, **Read Only** `yes`, and **Hits** `0`.
 
 > ### ⚠️ STOP AND READ
-> `usb1` is your whole USB drive, and the L009 offers it to anyone who connects, with no password. Your L009's setup turned that on. The next section turns it off.
+> TFTP has no login. Anyone who can reach your L009 can read every file you map. Keep **Read Only** checked, and map only files you mean to share.
 
-### 15.3 Turn off the whole-drive share
+### 15.4 Fetch the file from your laptop
 
-5. **L009 Terminal:** run:
-
-```
-/disk/set usb1 smb-sharing=no
-/ip/smb/shares/print
-```
-
-The list shows `pub` (disabled) and `Lab Media Server`. The `usb1` share is gone.
-
-   > **Why:** The share came from a setting on the disk itself. The checkboxes for automatic SMB sharing under **System**, **Disks**, **Settings** were already off, and they weren't the cause.
-
-6. **macOS:** run `smbutil view -g //192.168.88.1` again. It lists only `Lab Media Server`.
-
-### 15.4 Create an SMB user and lock the share to it
-
-7. **L009 window:** click **IP**, then **SMB**, then **Users** on the right.
-8. Select **guest** and click **Disable**.
-9. Click **New**. Set **Name** to `smbuser`, enter a throwaway **Password**, and check **Read Only**. Click **Apply**, then **OK**.
-10. Record the password in **Lab Notes**, in the **SMB** row.
-11. Close the **SMB Users** window to get back to **SMB Settings**.
-12. Click **Shares** on the right, and double-click **Lab Media Server**. Set **Valid Users** to `smbuser`. Click **Apply**, then **OK**.
-13. In the Terminal, run:
+10. **macOS:** open a terminal on your laptop. Use a fresh folder, so the download doesn't mix with the file in **Downloads**:
 
 ```
-/ip/smb/users/print
-/ip/smb/shares/print
+mkdir -p ~/tftp-got && cd ~/tftp-got
+tftp 192.168.88.1
 ```
 
-`guest` shows **X** (disabled), and `smbuser` is listed as read-only. `Lab Media Server` points at `/usb1/media`, is read-only, and shows `smbuser` under **Valid Users**.
+11. At the `tftp>` prompt, type `get tftp-test.txt`. It prints `Received 128159 bytes during 0.1 seconds in 251 blocks`. Type `quit`.
 
-### 15.5 Connect as smbuser
+    > **Why:** TFTP sends a file in 512-byte blocks, and 128,159 bytes comes to 251 of them.
 
-14. **macOS:** in Finder, press **Cmd+K**, enter `smb://192.168.88.1`, and click **Connect**.
-15. Sign in as a **Registered User** with `smbuser` and its password. **Uncheck** the box that remembers the password in your keychain, then click **Connect**. If it asks which share, pick **Lab Media Server**.
-16. A Finder window titled **Lab Media Server** opens and lists `tftp-test.txt`. The share also shows under **Locations** in the sidebar.
-17. Try to copy a file into the window. macOS refuses, because `smbuser` and the share are read-only.
-18. Eject the share with the eject icon next to it in the sidebar.
-
-> **Note:** **Windows** and **Linux:** enter `\\192.168.88.1` in File Explorer, or `smb://192.168.88.1` in a Linux file manager, and sign in as `smbuser`.
-
-### 15.6 Get the test video
-
-19. On the portal, in the **Downloads** card, click **lab-media-test.mp4**. Look near the address bar for **Insecure download blocked**, and click **Keep**.
-20. Open your **Downloads** folder. `lab-media-test.mp4` is 20,886,840 bytes (Finder shows about 21 MB), 14 seconds of video with a spoken line. To check it, run the command for your system, in the folder holding the file. **macOS:** `shasum -a 256 lab-media-test.mp4`. **Windows:** `certutil -hashfile lab-media-test.mp4 SHA256`. The fingerprint ends in `c7af3d`. The full value is:
+12. Check the copy:
 
 ```
-5beebb05df16fc5863fe04a9502c89194e21fee7400ef1503ee8bfae10c7af3d
+ls -l tftp-test.txt
+shasum -a 256 tftp-test.txt
 ```
 
-### 15.7 Put the video in the media folder
+The size is `128159` and the fingerprint matches the one in step 3, all 64 characters. A match means the file arrived intact.
 
-21. In a terminal on your laptop, in the folder holding the video, run the command below. Type `ftpwrite`'s password at the prompt. **Windows:** use `curl.exe`.
+13. **L009 Terminal:** run `/ip/tftp/print`. **Hits** now reads `1`. The server counts each request it answers.
+
+> **Note:** `192.168.88.1` is your L009's backdoor address. Use the address of whichever network your laptop is on.
+
+### 15.5 Turn on the FTP service
+
+FTP moves files in both directions and handles large files that WinBox's upload button struggles with. Your L009's setup turns the FTP service off, so you turn it on.
+
+14. **L009 window:** click **IP**, then **Services**. Double-click **ftp**. It shows as disabled.
+15. Check **Enabled**, leave **Port** at `21`, and set **Available From** to `192.168.88.0/24`. Click **OK**.
+16. In the Terminal, run:
 
 ```
-curl --user ftpwrite -T lab-media-test.mp4 ftp://192.168.88.1/usb1/media/
+/ip/service/print where name=ftp
 ```
 
-22. **L009 Terminal:** run:
+The line shows `21`, `tcp`, and `192.168.88.0/24`, and has no **X** in front of it.
+
+> **Note:** FTP sends passwords in plain text. **Available From** limits who can reach it, so keep it to your own network.
+
+### 15.6 Create two FTP users
+
+You make one user who can only read files and one who can also write. Writing is how large files get onto your USB drive.
+
+17. Click **System**, then **Users**, then the **Groups** tab, then **New**. Set **Comment** to `FTP Write`. Set **Name** to `ftp-write`. Under **Policies**, check `ftp`, `read`, and `write`, and leave every other policy unchecked. Click **Apply**, then **OK**.
+18. Click **New** again. Set **Comment** to `FTP Read`. Set **Name** to `ftp-read`. Check `ftp` and `read` only. Click **Apply**, then **OK**.
+19. Click the **Users** tab, then **New**. Set **Name** to `ftpwrite`, **Group** to `ftp-write`, and **Allowed Address** to `192.168.88.0/24`. Enter a throwaway password in **Password** and **Confirm Password**. Click **Apply**, then **OK**.
+20. Click **New** again. Set **Name** to `ftpread`, **Group** to `ftp-read`, and **Allowed Address** to `192.168.88.0/24`. Enter a different throwaway password. Click **Apply**, then **OK**.
+21. Record both passwords in **Lab Notes**.
+22. In the Terminal, run:
 
 ```
-/file/print where name~"usb1/media"
+/user/group/print where name~"ftp"
+/user/print where name~"ftp"
 ```
 
-The list shows `usb1/media/lab-media-test.mp4`, `.mp4 file`, about `19.9MiB`, next to `tftp-test.txt`.
+Both groups show their policies, with every unchecked policy marked `!`, such as `!winbox`, `!ssh`, and `!policy`. `ftp-read` also shows `!write`. Both users are listed with their groups and `192.168.88.0/24`.
 
-> **Note:** Use `.mp4`, `.mp3`, `.avi`, or `.mkv`. The old lab says the L009 doesn't list `.m4v` files, and the fix is to rename them to `.mp4`. Test video from an iPhone should be saved in the most compatible format (not HEVC).
+### 15.7 Test the read-only user
 
-### 15.8 See what DLNA offers right now
+Run the next commands in a terminal on your laptop, in the folder where you saved `tftp-test.txt` in 15.4 (`tftp-got`). Each command asks for the password.
 
-23. **Turn Wi-Fi off on your laptop.** If it's on, VLC may look for media servers on the class Wi-Fi and never find your L009. Your connection through the cable keeps working.
-24. Open **VLC**. In the sidebar, under **Local Network**, click **Universal Plug'n'Play**. Wait about a minute.
-25. Find `Student31 usb1 media` (your own label in place of `Student31`) and expand it. The tree shows the folders on your USB drive, such as `lost+found`, `nginx-conf`, `nginx-content`, `pull`, and `speedtest-logs`, and your video under `media`.
-26. Open `media` and double-click `lab-media-test.mp4`. It plays from your L009, and you hear the spoken line.
+> **Note:** **Windows:** type `curl.exe`, not `curl`. In PowerShell, `curl` is a different command.
 
-> ### ⚠️ STOP AND READ
-> Your L009's setup shares the whole USB drive with DLNA, the same way it shared it with SMB. Any media player on the cable side can browse your drive's folders, and play any media file anywhere on it. The next section turns that off.
+23. List your USB drive:
 
-### 15.9 Serve only the media folder
+```
+curl --user ftpread ftp://192.168.88.1/usb1/
+```
+
+The listing shows `tftp-test.txt`, and the container folders from Lab 4 (`nginx`, `speedtest`, `iperf3`, and others), owned by `root`.
+
+24. Download the test file, and check it:
+
+```
+curl --user ftpread -o ftp-got.txt ftp://192.168.88.1/usb1/tftp-test.txt
+shasum -a 256 ftp-got.txt
+```
+
+The fingerprint matches the one in step 3.
+
+25. Try an upload. Make a small file first:
+
+```
+printf 'ftp upload test\n' > ftp-up.txt
+curl --user ftpread -T ftp-up.txt ftp://192.168.88.1/usb1/
+```
+
+It fails with `curl: (25) Failed FTP upload: 550`. The read-only user can't write.
+
+### 15.8 Test the write user
+
+26. Upload the same file with the write user:
+
+```
+curl --user ftpwrite -T ftp-up.txt ftp://192.168.88.1/usb1/
+```
+
+It shows a progress line and no error.
 
 27. **L009 Terminal:** run:
 
 ```
-/disk/set usb1 media-sharing=no
-/ip/media/print
+/file/print where name~"ftp-up"
 ```
 
-The list is empty. The server that shared the whole drive is gone.
+The list shows `usb1/ftp-up.txt`, 16 bytes.
 
-   > **Why:** The disk's own media-sharing setting created that server, as its SMB setting created the SMB share.
+### 15.9 Try a large file (macOS and Linux)
 
-28. Add a server for the media folder only:
+28. Make a 10 MB file of random data. Type the file name without `~/`:
 
 ```
-/ip/media/add interface=bridge path=usb1/media friendly-name="Lab Media Server"
-/ip/media/print
+dd if=/dev/urandom of=ftp-test-10mb.bin bs=1048576 count=10
 ```
 
-The list shows one entry: **Interface** `bridge`, **Friendly Name** `Lab Media Server`, **Path** `usb1/media`, **Allowed IP** `0.0.0.0`, **Status** `Running`.
+It ends with `10485760 bytes transferred`.
 
-29. In VLC, close the app and open it again, click **Universal Plug'n'Play**, and wait about a minute. `Lab Media Server` lists only `lab-media-test.mp4`, 14 seconds long. Double-click it to play.
+   > **Note:** The shell doesn't expand `~` after `of=`. A name like `~/tftp-got/file` fails with `No such file or directory`.
 
-> **Note:** If you turn Wi-Fi back on, VLC may list servers from other routers on the class network, and may stop showing yours.
+29. Upload it with the write user:
+
+```
+curl --user ftpwrite -T ftp-test-10mb.bin ftp://192.168.88.1/usb1/
+```
+
+The progress line shows a `10.0M` total and about 20 MB per second on the instructor's router.
+
+30. **L009 Terminal:** run `/file/print where name~"usb1/ftp-test"`. The list shows `usb1/ftp-test-10mb.bin` at `10.0MiB`.
+
+    > **Note:** Include `usb1/` in the pattern. Without it, `ftp-test` also matches `tftp-test.txt`.
+31. Pull it back with the read-only user and compare:
+
+```
+shasum -a 256 ftp-test-10mb.bin
+curl --user ftpread -o ftp-back.bin ftp://192.168.88.1/usb1/ftp-test-10mb.bin
+shasum -a 256 ftp-back.bin
+```
+
+The two fingerprints are identical.
+
+32. **L009 Terminal:** remove the test files from the drive:
+
+```
+/file/remove [find where name~"usb1/ftp-"]
+```
+
+> ### ⚠️ STOP AND READ
+> The read-only user can still read everything on the drive, and probably more of the router's files. I only listed `usb1/`. Don't give out `ftpread` outside the lab, and don't leave exported certificates or keys in **Files**.

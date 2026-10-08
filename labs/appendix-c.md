@@ -9,7 +9,7 @@ MikroTik devices can do far more than covered in this guide. This appendix provi
 - [IP Scan](#ip-scan) — Device discovery
 - [Netwatch](#netwatch) — Monitor hosts and trigger actions
 - [Watchdog](#watchdog) — Auto-reboot on failure
-- [Hotspot](#hotspot) — Captive portal (see Lab 26)
+- [Hotspot](#hotspot) — Captive portal (see the Guest Wi-Fi lab)
 - [Scripting](#scripting) — Automation and custom logic
 - [API Access](#api-access) — Programmatic control
 
@@ -65,6 +65,8 @@ Discover devices on your network.
 4. Click **Start**
 5. View discovered devices with IP, MAC, and DNS names
 
+> **On your kit:** With **Interface** `vlan255` and **Address Range** `10.10.255.0/24`, the scan finds your mAP while it is on the 15 cm jumper. With **Interface** `bridge` and `192.168.88.0/24`, it finds your laptop on the backdoor cable.
+
 ---
 
 ## Netwatch
@@ -80,7 +82,7 @@ Monitor IP addresses and trigger actions when they go up or down.
 ### Basic Configuration
 
 1. Navigate to **Tools** → **Netwatch**
-2. Click **Add New**
+2. Click **New**
 3. Configure:
    - **Host:** IP address to monitor (e.g., 8.8.8.8)
    - **Interval:** How often to check (e.g., 00:00:30)
@@ -108,6 +110,8 @@ Monitor IP addresses and trigger actions when they go up or down.
     keep-result=no
 ```
 
+The Administrative Cheat Sheet (Appendix F) shows the same idea with Telegram.
+
 ### Critical Gotchas (Learned the Hard Way)
 
 These issues were discovered during a real deployment and will save you hours of troubleshooting:
@@ -125,6 +129,8 @@ Scripts called by Netwatch must have `dont-require-permissions=yes` set, or they
     :log warning "WAN is down!"
 }
 ```
+
+The Button Script lab hit the same problem. Without **Don't Require Permissions**, its script failed with `not enough permissions`.
 
 **3. Don't monitor local IPs**
 
@@ -225,7 +231,7 @@ Captive portal for guest access with authentication, bandwidth limits, and time 
 
 **Documentation:** https://help.mikrotik.com/docs/display/ROS/Hotspot
 
-> **See Lab 26** for a practical hotspot configuration that redirects guests to a landing page without requiring authentication.
+> **See the Guest Wi-Fi lab** for a hotspot that redirects guests to a landing page without requiring authentication. Your kit's hotspot is already set up, and the Production Readiness lab deals with its `admin` user.
 
 ---
 
@@ -239,7 +245,7 @@ RouterOS has a full scripting language for automation.
 
 **Documentation:** https://help.mikrotik.com/docs/display/ROS/Scripting
 
-**Note:** See Lab 18 for an introduction to scripting.
+**Note:** The RSC Files lab introduces script files, and the Button Script lab has a working script.
 
 ---
 
@@ -255,5 +261,7 @@ Programmatic access to RouterOS for integration with external systems.
 **Use case:** Integration with monitoring systems, automated provisioning, custom tools.
 
 **Documentation:** https://help.mikrotik.com/docs/display/ROS/REST+API
+
+> **In this class:** The HTTPS service you turn on in the certificates lab also serves the REST API, at `https://<router>/rest`. A user needs a group with the `api` and `rest-api` policies. Disabling the `api` service doesn't affect it. The Production Readiness lab limits who can reach the HTTPS service.
 
 ---

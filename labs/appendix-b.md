@@ -22,10 +22,12 @@ This is the easiest method when you have access to the device.
 
 6. Device reboots with selected configuration
 
+> **Note:** Unless you check **Do Not Backup**, a reset saves the old configuration as `auto-before-reset.backup`. That file holds your old passwords and keys, unencrypted. Delete it when you no longer need it.
+
 **After reset with "No Default Configuration":**
-- Device responds on 192.168.88.1 on all ports
-- No DHCP server — set static IP on your laptop (192.168.88.2/24)
-- Login: admin, no password
+- The device has no IP address and no DHCP server. Login is `admin` with no password.
+- Find it by its MAC address. In WinBox, click **Disconnect**, then **Refresh** in **Neighbors**, and click the MAC address, not an IP. WinBox fills in your old password, so clear the **Password** field before you click **Connect**.
+- Give it an address or load a configuration script. Appendix A does this for the class kit.
 
 **After reset with default configuration:**
 - Device responds on 192.168.88.1
@@ -49,11 +51,13 @@ This is the easiest method when you have access to the device.
 
 3. Confirm when prompted
 
+`skip-backup=yes` is the same as **Do Not Backup**. Leave it out if you want the safety copy.
+
 ### Method 3: Reset Button (Physical)
 
-Use when you can't access the device via network.
+Use when you can't access the device via network. The button gives you the **default configuration**, not a blank one. For a blank configuration use Method 1 or 2.
 
-**Reset to default configuration:**
+**Reset to the default configuration:**
 
 1. Unplug power from the device
 
@@ -61,29 +65,23 @@ Use when you can't access the device via network.
 
 3. While holding the button, plug in power
 
-4. Watch the USR LED — it will start flashing
+4. Watch the USR LED (or the LED your model's documentation names). When it starts flashing, release the button
 
-5. Release the button when USR LED starts flashing
+5. Device boots with the default configuration
 
-6. Device boots with default configuration
-
-**Reset to no configuration (blank):**
-
-1. Follow steps 1-5 above
-
-2. Continue holding until USR LED stops flashing and goes solid
-
-3. Release the button
-
-4. Device boots with no configuration
+**Don't hold on past the flashing.** Keep holding and the device does something else:
 
 ### Reset Button Timing Reference
 
-| Duration | Action |
-|----------|--------|
-| Until USR flashes (~5 sec) | Reset to default configuration |
-| Until USR solid (~10 sec) | Reset to blank configuration |
-| Until USR off (~15 sec) | Enter Netinstall mode |
+| Release the button when the LED is... | What happens |
+|---------------------------------------|--------------|
+| Flashing | Reset to the default configuration |
+| Solid (about 5 seconds later) | CAPs mode: the device looks for a CAPsMAN controller. This is not a reset. |
+| Off (about 5 seconds after that) | Netinstall mode: the device looks for a Netinstall server |
+
+Holding the button before you apply power, and releasing it about 3 seconds after, loads the backup boot loader.
+
+MikroTik's page on this: https://manual.mikrotik.com/docs/getting-started/configuration-management/routeros-configuration-reset
 
 ### Method 4: Netinstall (Complete Reinstall)
 
@@ -111,7 +109,7 @@ Use when the device won't boot or is severely corrupted.
 6. Put the device in Netinstall mode:
    - Hold reset button
    - Apply power
-   - Hold for ~15 seconds until USR LED turns off
+   - Keep holding until the USR LED has gone from flashing to solid to off (about 10 seconds after it starts flashing)
    - Release button
 
 7. Device appears in Netinstall
@@ -172,7 +170,7 @@ After any reset, verify:
 - [ ] Set device identity
 - [ ] Configure time zone
 - [ ] Check for firmware updates
-- [ ] Apply your configuration (or import from script)
+- [ ] Apply your configuration (or import from script). For the class kit, load the completed file as Appendix A describes.
 
 ---
 
@@ -190,7 +188,7 @@ Safe Mode is an "undo" feature for risky configuration changes. If you lose conn
 ### Using Safe Mode
 
 **Enter Safe Mode:**
-- Click the **Safe Mode** button in WinBox title bar, OR
+- Click the **Safe Mode** switch in the WinBox top bar (in WinBox 4 it sits to the right of the undo and redo arrows), OR
 - Press **Ctrl+X** in WinBox
 
 The title bar shows **[Safe Mode]** when active.

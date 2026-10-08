@@ -1,12 +1,13 @@
-# Lab 29 — Administrative Tasks
+# Appendix F — Administrative Cheat Sheet
 
-*Prerequisites: Lab 1 (Initial Configuration)*
 
-Routine administrative tasks you'll perform throughout the life of your MikroTik.
+A reference of where to go to do the routine administrative tasks you'll perform throughout the life of your MikroTik. It is not a lab. Each task works on its own, in any order, and some of them you did earlier in the class. They are here so you can find them again later.
 
 ---
 
-## Lab 29.1 — Change Router Identity
+## F.1 — Change Router Identity
+
+> **Also in:** Lab 1.3 sets your identity the first time.
 
 1. Navigate to **System** → **Identity**
 
@@ -22,7 +23,9 @@ The identity appears in:
 
 ---
 
-## Lab 29.2 — Change Admin Password
+## F.2 — Change Admin Password
+
+> **Also in:** Lab 1.4 sets your admin password the first time. Record the new one in **Lab Notes**.
 
 1. Navigate to **System** → **Users**
 
@@ -40,7 +43,10 @@ The identity appears in:
 
 ---
 
-## Lab 29.3 — RouterOS Software Upgrade
+## F.3 — RouterOS Software Upgrade
+
+> ### ⚠️ STOP AND READ
+> Don't **Download & Install** an update during class. Your kit is tested on RouterOS `7.24.5`, and the container and User Manager packages from the portal are `7.24.5` builds. Checking for updates is fine.
 
 MikroTik releases regular updates. Keep your device current for security and features.
 
@@ -68,7 +74,9 @@ MikroTik releases regular updates. Keep your device current for security and fea
 
 ---
 
-## Lab 29.4 — RouterBOARD Firmware Upgrade
+## F.4 — RouterBOARD Firmware Upgrade
+
+> **Note:** Your kit's RouterOS is newer than its RouterBOARD firmware, because the instructor's setup doesn't upgrade the firmware. On the instructor's L009, **Current Firmware** reads `7.20.8` against `7.24.5` under **Upgrade Firmware**. The upgrade needs one reboot.
 
 Separate from RouterOS, the RouterBOARD firmware is the low-level hardware firmware.
 
@@ -96,7 +104,9 @@ Separate from RouterOS, the RouterBOARD firmware is the low-level hardware firmw
 
 ---
 
-## Lab 29.5 — Create Additional Users
+## F.5 — Create Additional Users
+
+> **Also in:** Lab 15.6 creates the FTP groups and users the same way.
 
 Instead of sharing the admin account, create individual user accounts.
 
@@ -106,7 +116,7 @@ Instead of sharing the admin account, create individual user accounts.
 
 2. Click the **Groups** tab
 
-3. Click **Add New**:
+3. Click **New**:
    - **Name:** operators
    - **Policies:** Check the permissions appropriate for this group:
      - **local:** Local console login
@@ -134,7 +144,7 @@ Instead of sharing the admin account, create individual user accounts.
 
 5. Click the **Users** tab
 
-6. Click **Add New**:
+6. Click **New**:
    - **Name:** [username]
    - **Group:** operators
    - **Password:** [password]
@@ -144,13 +154,15 @@ Instead of sharing the admin account, create individual user accounts.
 
 ---
 
-## Lab 29.6 — Scheduled Reboot
+## F.6 — Scheduled Reboot
+
+> **Cleanup:** When you finish trying this, remove the scheduler entry, so your kit doesn't reboot on its own later.
 
 Schedule automatic reboots (useful for stability on long-running devices).
 
 1. Navigate to **System** → **Scheduler**
 
-2. Click **Add New**:
+2. Click **New**:
    - **Name:** weekly-reboot
    - **Start Date:** [pick a date]
    - **Start Time:** 04:00:00 (or preferred time)
@@ -166,7 +178,9 @@ Schedule automatic reboots (useful for stability on long-running devices).
 
 ---
 
-## Lab 29.7 — View Logs
+## F.7 — View Logs
+
+> **Also in:** Lab 19 reads the log with `/log/print` to check what an import did.
 
 MikroTik logs system events. Review them regularly and when troubleshooting.
 
@@ -184,15 +198,17 @@ MikroTik logs system events. Review them regularly and when troubleshooting.
 
 5. View logging rules — what events go where (memory, disk, remote)
 
-6. Click **Add New** to create custom logging rules:
+6. Click **New** to create custom logging rules:
    - **Topics:** Select event types (e.g., dhcp, wireless, firewall)
    - **Action:** Where to send logs (memory, disk, remote)
 
 ---
 
-## Lab 29.9 — Version Control with Git (Optional)
+## F.8 — Version Control with Git (Optional)
 
-In Lab 6, you learned that RSC exports are plain text scripts you can read, edit, and share. Git takes this further — it tracks every change you make to those exports over time, so you can see exactly what changed, when, and roll back if needed.
+> **Also in:** Lab 19 creates an export and downloads it.
+
+In Lab 19, you learned that RSC exports are plain text scripts you can read, edit, and share. Git takes this further — it tracks every change you make to those exports over time, so you can see exactly what changed, when, and roll back if needed.
 
 ### What You Need
 
@@ -309,7 +325,10 @@ Each device's config is tracked independently. One repo, all your devices, full 
 
 ---
 
-## Lab 29.10 — Telegram Alerts (Optional)
+## F.9 — Telegram Alerts (Optional)
+
+> ### ⚠️ STOP AND READ
+> The alert script in this section holds your bot token. A configuration export can include script text, token and all. Don't commit an export to Git (F.8) after you build the script, or remove the token from the script first.
 
 MikroTik can send alerts directly to your phone via Telegram — no containers, no email servers, no external tools. Combined with Netwatch, your router notifies you the moment something goes down.
 
@@ -424,7 +443,7 @@ up-script=":global alertMessage "mAP back online"; /system/script/run telegram-a
 > **This replaces email.** Lab 15 mentioned email notifications via scripting — Telegram is faster, easier to set up, and doesn't require an SMTP server. Your phone buzzes the moment something breaks.
 
 
-## Lab 29 Summary
+## Summary
 
 | Task | Location |
 |------|----------|

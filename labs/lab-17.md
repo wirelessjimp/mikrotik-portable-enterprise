@@ -1,141 +1,158 @@
-# Lab 17 — Production Readiness (Draft)
+# Lab 17 — Guest Wi-Fi (Optional)
 
-*Prerequisites: Labs 1 to 16, whichever you built, and your **Lab Notes** file filled in.*
+*Prerequisites: Lab 4 (the nginx container, at `172.17.0.4`), Lab 6 (the tunnel), Lab 7 (you've made a virtual SSID before), Lab 8 (the mAP is on the 15 cm jumper), Lab 15 (the FTP write user `ftpwrite`). The mAP must be on the jumper, not on the class network.*
 
-**Why:** The class left things open on purpose: shared passwords, exported keys, services switched on, and shares that offered more than you meant. This lab closes them, and shows what to check before you use this gear for real.
+**Why:** A guest network lets visitors join an open Wi-Fi, and their phone pops up a sign-in page. Here the page sends them straight to a welcome page on your own web server. Your L009's setup already built the guest network and the hotspot. You replace the sign-in page, carry the network to the mAP, and add a guest SSID.
+
+### 17.1 Look at the guest network that's already there
+
+1. **L009 window:** click **New Terminal** and run:
+
+```
+/interface/bridge/port/print where bridge=br-guest
+/ip/hotspot/print
+/ip/hotspot/user/print
+/ip/dhcp-server/print where name=dhcp-guest
+/file/print where name~"hotspot"
+```
+
+`br-guest` holds only `ether6`, which shows the **I** flag because nothing is plugged into it. `hotspot1` runs on `br-guest` with the pool `pool-guest` and the profile `hsprof1`. The hotspot users are `default-trial` and `admin`. `dhcp-guest` serves the network. The `hotspot` folder holds the default pages, including `login.html` at 4,423 bytes.
 
 > ### ⚠️ STOP AND READ
-> This lab is a draft. It was read through and its commands checked where they could be, but not every step has been run on a kit. Don't restrict a service until you have another way in. The backdoor port (**ether7**, at `192.168.88.1`) is your permanent way in, so keep it.
+> Your L009's setup created a hotspot user `admin` with no password. The next section replaces the sign-in page, but the user stays. Don't leave a guest network running like this after class.
 
-### 17.1 Change every classroom credential
+### 17.2 Replace the sign-in page with a redirect
 
-Everything in **Lab Notes** was a throwaway, and the instructor's script gave every kit the same starting values for some of them. Change each one, and record the new value.
-
-| Credential | Where you set it | First set in |
-|---|---|---|
-| L009 admin password | **System**, **Password** | Lab 1.4 |
-| mAP admin password | **System**, **Password** | Lab 6.3 |
-| Fallback Wi-Fi key | **Wireless**, **Security Profiles**, `fallback-security` | Lab 7.1 |
-| RoMON secret, on both devices | **Tools**, **RoMON** | Lab 8.3 |
-| RADIUS secret, in three places: the L009's User Manager router entries `mikrotik-ap` and `mikrotik-map-tunnel`, and the mAP's **RADIUS** client | User Manager and **RADIUS** | Lab 5, Lab 7.3, Lab 7.4 |
-| `user2` | User Manager | Lab 5 |
-| `ftpwrite` and `ftpread` | **System**, **Users** | Lab 14.6 |
-| `smbuser` | **IP**, **SMB**, **Users** | Lab 15.4 |
-| Hotspot `admin` | **IP**, **Hotspot**, **Users** | 17.5 below |
-
-1. For each row, set a new password and enter it in **Lab Notes**. Use the dialog in WinBox. Don't type a password into a Terminal command, where it stays in the command history.
-2. Save **Lab Notes** (Lab 0, steps 4 and 5).
-
-### 17.2 Delete exported keys and backups
-
-3. **L009 Terminal:** list the files that hold certificates or keys:
+2. On your laptop, in your `tftp-got` folder, create a file named `login.html`. **macOS:** paste this into a terminal. On another system, use a text editor and save the same text.
 
 ```
-/file/print where name~"p12|key|crt"
+cat > login.html <<'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting...</title>
+    <meta http-equiv="refresh" content="0; url=http://172.17.0.4">
+</head>
+<body>
+    <p>Redirecting to welcome page...</p>
+</body>
+</html>
+EOF
 ```
 
-On the instructor's router it listed four files, all in the `Certificates` folder, and nothing else.
+The file is 204 bytes. The address `172.17.0.4` is your nginx container from Lab 4.
 
-4. Remove each one you exported, by name. For example, `/file/remove Certificates/user1-client.p12`.
-
-   > **Why:** A `.p12` and a `.key` hold a private key. Anyone who can log in to FTP with the read-only user can download them.
-
-5. Delete the same files from your laptop and from your phones' **Downloads** folders.
-6. On both devices, list the backups:
+3. **L009 Terminal:** keep the original page by renaming it:
 
 ```
-/file/print where name~"backup"
+/file/set hotspot/login.html name=hotspot/login.html.bak
 ```
 
-7. Each device keeps an automatic backup from before its last reset. If it holds an old configuration, delete it. **mAP Terminal:**
+4. In a terminal on your laptop, upload the new page. Type `ftpwrite`'s password at the prompt. **Windows:** use `curl.exe`.
 
 ```
-/file/remove flash/auto-before-reset.backup
+curl --user ftpwrite -T login.html ftp://192.168.88.1/hotspot/
 ```
 
-   **L009 Terminal:** its copy sits in the root of **Files**, not in `flash`:
+5. **L009 Terminal:** run:
 
 ```
-/file/remove auto-before-reset.backup
+/file/print where name~"hotspot/login"
+/container/print where name=nginx
 ```
 
-8. Delete `mAP-preDualWAN-config.backup` from your laptop. If you did Lab 18, delete `Student31-l009-before-rsc.backup` and `Student31-mAP-before-rsc.backup` too, and the two export files from 18.3.
+`hotspot/login.html` is 204 bytes, `hotspot/login.html.bak` is 4423 bytes, and the nginx container shows **R** (running).
 
-> **Note:** Deleting the files doesn't delete the certificates. They stay in the router's certificate store.
+> **Note:** Guests can reach your containers before signing in because the staged walled garden lists `172.17.0.2`, `172.17.0.3`, and `172.17.0.4`.
 
-### 17.3 Back to Home and the MikroTik app
+### 17.3 Carry the guest network to the mAP
 
-9. **L009 window:** close the **BTH VPN WireGuard** tab. It shows a key and a QR code that let a device into your network. Don't photograph it.
+The guest network travels over the jumper as VLAN 50, the way VLANs 20, 30, and 40 do.
 
-   > **Note:** Leave the Back to Home tunnel in place. It's meant to be used again: the router updates its address by itself when you plug it in somewhere else, and the phone reconnects. The tunnel's peer is created by the feature itself (it shows the **D** flag, for dynamic), so it isn't yours to remove with `/remove`. To drop the connection, delete the VPN from the phone's settings. The router's `/ip/cloud/back-to-home-users` menu lists the users the app added. Revoking the service can't be undone as a pause: you'd create the connection again from the app, and delete the old peer.
+6. Check that the mAP is on the jumper (Lab 8.1, steps 1 and 2). The mAP takes about 30 seconds after a cable move before WinBox connects to `10.255.255.2`.
+7. **L009 window:** click **Interfaces**, then the **VLAN** tab, then **New**. Set these in the order the window lists them:
+   - **Comment:** `Trunk VLAN 50`
+   - **Name:** `ether8-vlan50`
+   - **VLAN ID:** `50`
+   - **Interface:** `ether8`
 
-10. In the MikroTik app, **uncheck Keep password** on the login screen, and delete the saved router entries.
+   Click **Apply**, then **OK**.
 
-### 17.4 Turn off what you don't need
-
-11. **mAP Terminal:** list the services:
-
-```
-/ip/service/print
-```
-
-`ftp`, `telnet`, `www`, and `api` are enabled, and only the firewall's last rule blocks them. Turn them off, and list again. They show **X**.
+8. Click **Bridge**, then the **Ports** tab, then **New**. Set **Comment** to `Trunk to guest`, **Interface** to `ether8-vlan50`, and **Bridge** to `br-guest`. Click **Apply**, then **OK**.
+9. In the Terminal, run:
 
 ```
-/ip/service/disable ftp,telnet,www,api
-/ip/service/print
+/interface/vlan/print where name~"vlan50"
+/interface/bridge/port/print where bridge=br-guest
 ```
 
-12. **L009 Terminal:** turn FTP off, which Lab 14 turned on:
+The VLAN shows **R** (running), and `br-guest` now lists both `ether6` and `ether8-vlan50`.
+
+10. **mAP window:** click **Interfaces**, then the **VLAN** tab, then **New**. Set **Comment** to `Guest VLAN`, **Name** to `ether1-vlan50`, **VLAN ID** to `50`, and **Interface** to `ether1`. Click **Apply**, then **OK**.
+11. Click **Bridge**, then the **Bridge** tab, then **New**. Set **Comment** to `Guest network` and **Name** to `br-guest`. Click **Apply**, then **OK**. The bridge gets no IP address, because your L009 serves DHCP and the hotspot.
+12. Click the **Ports** tab, then **New**. Set **Comment** to `Guest VLAN trunk`, **Interface** to `ether1-vlan50`, and **Bridge** to `br-guest`. Click **Apply**, then **OK**.
+13. In the Terminal, run:
 
 ```
-/ip/service/disable ftp
+/interface/vlan/print where name~"vlan50"
+/interface/bridge/port/print where bridge=br-guest
 ```
 
-13. Restrict who can log in to the L009. Only your backdoor network and the tunnel get in:
+`ether1-vlan50` shows **R**, and `br-guest` lists `ether1-vlan50`.
+
+### 17.4 Create the guest SSID
+
+14. **mAP window:** click **Wireless**, then **Wireless**, then the **WiFi Interfaces** tab, then **New**, then **Virtual**. On the **General** tab, leave **Name** at `wlan3` and **Type** at `Virtual`.
+
+    > **Note:** Use **Wireless**, not **WiFi**. On the mAP, **WiFi** is empty.
+
+15. Click the **Wireless** tab and set these in the order the window lists them:
+    - **Mode:** `ap bridge`
+    - **SSID:** `Student31-Guest` (use your own label)
+    - **Master Interface:** `wlan1`
+    - **Security Profile:** `default`
+
+    Click **Apply**, then **OK**. `wlan3` appears under `wlan1`.
+
+    > **Why:** The SSID is open, with no password. The hotspot decides what a guest can reach.
+
+16. Open **New Terminal** and paste this, then press **Enter**:
 
 ```
-/ip/service/set winbox address=192.168.88.0/24,10.255.255.0/24
-/ip/service/set ssh address=192.168.88.0/24,10.255.255.0/24
-/ip/service/set www-ssl address=192.168.88.0/24,10.255.255.0/24
+/interface/bridge/port/add interface=wlan3 bridge=br-guest comment="Guest Wi-Fi"
 ```
 
-   > **Why:** A phone on the enterprise SSID may be able to reach the L009's login at `10.10.255.1` with the admin password, because the mAP passes its traffic along. After this step the L009 answers only the two networks in the list. It also closes the class Wi-Fi path to the WAN address, which the setup's firewall rule `WAN Access from class Wi-Fi` had opened.
-
-14. Check that it worked. WinBox from your laptop on the backdoor still connects. From a phone on `Student31-EAP`, a login at `10.10.255.1` is refused.
-
-### 17.5 The hotspot `admin` user
-
-15. **L009 window:** click **IP**, then **Hotspot**, then the **Users** tab. Double-click `admin` and set a password. Or remove the user, if you don't need it.
-
-   > **Why:** It was created with no password. While the original login page was in place, that would have let a guest sign in with an empty password.
-
-### 17.6 Check how you reach the router
-
-16. From your laptop on the class Wi-Fi, try WinBox to your L009's WAN address from **Lab Notes**. After 17.4 it times out.
-17. From a phone off your network, use Back to Home (Lab 11) and open the MikroTik app at `10.10.255.1`. It still works, because that path comes through the tunnel.
-
-### 17.7 Read the firewall
-
-18. **L009 Terminal:** run:
+17. Run:
 
 ```
-/ip/firewall/filter/print where chain=input
+/interface/wireless/print proplist=name,ssid,master-interface,security-profile where name=wlan3
+/interface/bridge/port/print where bridge=br-guest
 ```
 
-Find `WAN Access from class Wi-Fi`, which accepts ports 443 and 8291 from `172.20.26.0/24` on the WAN list. After step 13 the services refuse that network anyway, so the rule no longer lets anyone in. It's harmless, and you can remove it if you'd rather not leave it. The last rule drops everything that doesn't come from the **LAN** list.
+`wlan3` shows `Student31-Guest`, master `wlan1`, and profile `default`. Its bridge port shows the **I** flag, the same as `wlan1` and `wlan2` do in access point mode. The cause is unknown.
 
-19. **mAP Terminal:** run:
+> **Note:** The button script from Lab 14 switches every virtual SSID on `wlan1`, so it handles `wlan3` too. In station mode a press turns `wlan2` and `wlan3` off, and in access point mode it turns them back on.
+
+### 17.5 Join from a phone
+
+18. On a phone, join `Student31-Guest`. There's no password.
+19. The phone shows an alert that you need to sign in. Open it, or open a browser and go to any plain `http` site. The browser ends on your nginx welcome page, served from your own L009.
+20. **L009 Terminal:** run:
 
 ```
-/ip/firewall/filter/print where chain=input
-/interface/list/member/print
+/ip/dhcp-server/lease/print where server=dhcp-guest
+/ip/hotspot/host/print
 ```
 
-`br-mgmt` is in the **WAN** list, `br-fallback` is in **LAN**, and `wlan1` is in neither. Read it, and change nothing.
+The phone shows in both, with a `10.10.50.x` address (`10.10.50.10` on the instructor's router) and the server `hotspot1`.
 
-### 17.8 Things to know
+### 17.6 Test what a guest can reach
 
-- **Enterprise clients share `br-fallback`.** They can reach the mAP's own services until you turn those off. The fuller fix is to put the enterprise SSID on its own bridge.
-- **Check Certificate** was turned off for the three container pulls in Lab 4. The router's CRL settings are on.
-- **Failover (Lab 12):** the L009's WAN client has **Check Gateway** set to `none`, so failover follows a dropped link only. The route `WAN2-via-mAP` still points at an address the mAP has only while it's on the jumper.
+21. With the phone still on `Student31-Guest`, open each address in its browser:
+    - `http://172.17.0.2:3000`: your OpenSpeedTest container loads, with no sign-in.
+    - `http://172.17.0.4`: the nginx welcome page.
+    - `https://example.com`: you're sent to the nginx welcome page, and the outside site doesn't load.
+
+    > **Why:** The walled garden lists your three container addresses, so guests reach those without signing in. The hotspot redirects everything else.
+
+    > **Note:** `172.17.0.3` is the iperf3 container. It isn't a web page.

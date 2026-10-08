@@ -1,6 +1,58 @@
 # Appendix D — Network Diagrams
 
-These diagrams show example network topologies using the MikroTik configuration built in this guide.
+These diagrams show example network topologies using the MikroTik configuration built in this guide. The first section is the class kit, as the instructor's script builds it. The sections after it are example topologies from the full guide, which builds on a hEX S, so their port tables differ from your kit.
+
+---
+
+## Class Kit (L009 and mAP)
+
+Your kit is one L009 and one mAP. The cables move between two states as you work through the mAP labs. In both, the WireGuard tunnel joins your L009 (`10.255.255.1`) and your mAP (`10.255.255.2`).
+
+```
+ STATE 1: THE mAP ON THE 15 cm JUMPER
+          (the mAP's management address is 10.10.255.x)
+
+   class switch --- "Router" cable ---> ether1 +---------+
+                                               |  L009   | ether8 --- 15 cm jumper ---> ETH1 +--------+
+   laptop --------- 1 meter cable ----> ether7 +---------+                                   |  mAP   |
+                                                                                             +--------+
+
+ STATE 2: THE mAP ON THE CLASS NETWORK
+          (the mAP's management address is 198.51.100.x)
+
+   class switch --- "Router" cable ---> ether1 +---------+
+                                               |  L009   |
+   laptop --------- 1 meter cable ----> ether7 +---------+
+
+   class switch --- "mAP" cable (PoE) -> ETH1  +--------+
+                                               |  mAP   |
+                                               +--------+
+```
+
+**Your L009 ports**
+
+| Port | Function | Network |
+|------|----------|---------|
+| ether1 | WAN, to the class switch | `203.0.113.x` from the class router |
+| ether2 | VLAN 20 access | `10.10.20.0/24` |
+| ether3 | VLAN 30 access | `10.10.30.0/24` |
+| ether4 | VLAN 40 access | `10.10.40.0/24` |
+| ether5 | VLAN 40 access | `10.10.40.0/24` |
+| ether6 | Guest bridge (`br-guest`) | `10.10.50.0/24` |
+| ether7 | Backdoor, its own bridge | `192.168.88.0/24`, the router is `192.168.88.1` |
+| ether8 | Trunk to the mAP | VLAN 255 untagged (`10.10.255.0/24`), VLANs 20, 30, and 40 tagged. The guest Wi-Fi lab adds VLAN 50 tagged. |
+
+**Your mAP ports and radios**
+
+| Port or radio | Function | Network |
+|---------------|----------|---------|
+| ETH1 | WAN side, bridge `br-mgmt` | `10.10.255.x` from the L009 on the jumper, `198.51.100.x` on the class network |
+| ETH2 | Your laptop, bridge `br-fallback` | `192.168.89.0/24`, the mAP is `192.168.89.1` |
+| wlan1 | Fallback Wi-Fi, in `br-fallback` | `Student31-Fallback` |
+| wlan2 | Enterprise Wi-Fi, in `br-fallback` | `Student31-EAP` |
+| wlan3 | Guest Wi-Fi, in `br-guest`, VLAN 50 over ETH1 | `Student31-Guest`, open |
+
+**Other networks in the kit:** containers on `172.17.0.0/24` (OpenSpeedTest `.2`, iperf3 `.3`, nginx `.4`), the WireGuard tunnel on `10.255.255.0/24`, and the class Wi-Fi on `172.20.26.0/24`. Use your own label in place of `Student31`.
 
 ---
 
@@ -215,7 +267,7 @@ MikroTik as your main home router with a separate lab router for testing.
 
 ## Port Assignment Reference
 
-### 5-Port Devices (hEX S, hAP)
+### 5-Port Devices (hEX S, hAP), full guide build
 
 | Port | Function | VLAN |
 |------|----------|------|
@@ -225,7 +277,9 @@ MikroTik as your main home router with a separate lab router for testing.
 | ether4 | Backdoor access | 255 (untagged) |
 | ether5 | Trunk/Expansion | 20,30,40 tagged; 255 untagged |
 
-### 8-Port Devices (L009, RB5009)
+### 8-Port Devices (L009, RB5009), full guide build
+
+This is the layout the full guide builds. Your class kit's ports are listed at the top of this appendix.
 
 | Port | Function | VLAN |
 |------|----------|------|
@@ -241,4 +295,4 @@ MikroTik as your main home router with a separate lab router for testing.
 ---
 
 *Document Version: Draft 1.0*
-*Last Updated: March 2026*
+*Last Updated: October 2026*
