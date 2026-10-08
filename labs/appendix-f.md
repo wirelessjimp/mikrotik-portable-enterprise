@@ -62,6 +62,8 @@ MikroTik releases regular updates. Keep your device current for security and fea
    - **testing:** Pre-release features
    - **development:** Bleeding edge (not recommended for production)
 
+> **Best practice is to use the *stable* branch unless you have a reason to change from it**
+
 4. If updates are available, the window will show your **Installed Version** and the **Latest Version** available on that channel
 
 ### Install Updates
