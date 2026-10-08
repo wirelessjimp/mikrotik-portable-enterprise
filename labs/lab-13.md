@@ -64,7 +64,7 @@ It prints a table for 10 seconds. Find **Enterprise Networking** and note its **
 9. Click **New**. If the dialog opens on another tab, click the **General** tab.
 10. Set **Name** to `class-wifi` and **Mode** to `dynamic keys`. Under **Authentication Types**, check **WPA2 PSK**. The list starts empty, so that's the only box to check. In **WPA2 Pre-Shared Key**, clear the field, then type the class Wi-Fi password from the slide. Click **Apply**, then **OK**.
 
-    > **Note:** Type the key in this dialog, not in a Terminal command. On the instructor's router, a Terminal command with the password in it left the prompt waiting for a closing quote.
+    > **Note:** Type the key in this dialog, not in a Terminal command. On the instructor's router, a Terminal command with the password in it left the prompt waiting for a closing quote. The class key ends in a `$`, and RouterOS reads a `$` in a command as the start of a variable, which is the likely cause. If you ever do put the key in a command, write the `$` as `\$`.
 
 11. In the Terminal, run:
 
