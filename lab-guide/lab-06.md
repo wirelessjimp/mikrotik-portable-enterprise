@@ -1,6 +1,6 @@
 # Lab 6 — Backup and Configuration Export
 
-*Prerequisites: Lab 5*
+*Prerequisites: Lab 1. Best done after Labs 1 to 5, before Lab 7 starts changing your bridges and VLANs*
 
 Before modifying bridges, VLANs, and firewall rules (Lab 7+), create a backup. This is your checkpoint — if something breaks, you can recover to this known-good state.
 
