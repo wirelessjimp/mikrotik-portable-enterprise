@@ -184,7 +184,7 @@ For the toggle to be useful, the mAP needs a security profile ready for station 
 
 10. Navigate to **Wireless** → **Security Profiles**
 
-11. Create a profile (or verify the one from Lab 25.4 exists):
+11. Create a profile (or verify the one from Lab 25.3 exists):
     - **Name:** fallback-hotspot
     - **Mode:** dynamic keys
     - **Authentication Types:** WPA2 PSK

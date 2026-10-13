@@ -9,7 +9,7 @@ Hotspot creates a captive portal — guests connect to Wi-Fi, their device auto-
 - Guest Wi-Fi — show terms of service or welcome page
 - Demo environments — direct clients to a specific resource
 
-> **Tested Configuration:** This hotspot configuration is what is used in the classroom scenario for students to get a landing page served by an nginx container.
+> **Tested Configuration:** This hotspot configuration serves a landing page from an nginx container.
 
 ---
 

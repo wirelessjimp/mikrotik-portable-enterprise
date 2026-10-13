@@ -1,6 +1,6 @@
 $schema: https://api.gitbook.com/gitbook-docs.yaml
 site:
-  title: Full Stack Networking for the Price of a Bar Tab
+  title: "MikroTik Portable Enterprise: Full Stack Networking for the Price of a Bar Tab"
   structure:
     - type: space
       key: labs

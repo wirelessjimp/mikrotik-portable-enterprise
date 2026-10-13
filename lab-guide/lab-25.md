@@ -2,8 +2,6 @@
 
 *Prerequisites: Lab 1 (Initial Configuration), Lab 10 (Firewall)*
 
-> **Class note:** Labs 24.3 (Failover) and 24.4 (Wi-Fi Client Mode) can be completed in class using your wired WAN and the R550 Wi-Fi. Labs 24.1 (USB Tethering) and 24.2 (USB Cellular) require personal devices and are reference material for home use.
-
 MikroTik routers aren't limited to a single wired WAN connection. This lab covers alternative WAN sources — cellular, Wi-Fi client mode, USB tethering — and how to configure automatic failover between any two WAN connections.
 
 **Use cases:**
