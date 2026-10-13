@@ -1,4 +1,4 @@
-# Introduction
+# MikroTik Portable Enterprise: Full Stack Networking for the Price of a Bar Tab
 
 **A hands-on MikroTik lab guide for Wi-Fi professionals**
 
