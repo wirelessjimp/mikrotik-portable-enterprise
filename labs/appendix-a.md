@@ -1,4 +1,4 @@
-# Appendix A — If You Fall Behind (Reset and Load a Completed File)
+# Appendix A: If You Fall Behind (Reset and Load a Completed File)
 
 *Prerequisites: none. Use this only if you're far behind and want to skip ahead. It erases the device you reset.*
 
@@ -9,11 +9,11 @@
 
 ### A.1 Before you reset (both devices)
 
-1. On the portal, download `class-complete-l009.rsc` and `class-complete-map.rsc`. Look near the address bar for **Insecure download blocked**, and click **Keep**.
+1. On the portal, download `class-complete-l009.rsc` and `class-complete-map.rsc`. Also download `class-day1-end-l009-part2.rsc`, which you need after your certificates exist (A.4). Look near the address bar for **Insecure download blocked**, and click **Keep**.
 
    > **Why:** Once your laptop is plugged into a reset router, the portal may stop loading by name. Download both files first.
 
-2. Open your **Downloads** folder and check that both files are there.
+2. Open your **Downloads** folder and check that all three files are there.
 3. Save your **Lab Notes** (Lab 0, steps 4 and 5), so your records survive.
 
 ### A.2 Reset the L009 and load its file
@@ -33,6 +33,8 @@
 
 It should print `Script file loaded and executed successfully`. If it prints an error instead, stop and tell the instructor.
 
+   > **Note:** If the error says `this router already has bridges`, the reset didn't happen, and the script stopped before it changed anything. Go back to step 4 and reset the L009.
+
    > **Note:** WinBox may drop during the import, because the script puts **ether7** into a bridge. If it does, wait a few seconds and connect to `192.168.88.1`.
 
 9. Check for problems:
@@ -41,7 +43,7 @@ It should print `Script file loaded and executed successfully`. If it prints an 
 /log/print where message~"class-complete-l009"
 ```
 
-You should see a `start` line and a `done` line. A line with `warning` in it names a step that failed. Tell the instructor.
+You should see a `start` line and a `done` line, and the `done` line should read `done, warnings: 0`. A line with `warning` in it names a step that failed. Tell the instructor.
 
 10. Set your identity as in Lab 1.3 and your password as in Lab 1.4. Record both in **Lab Notes**.
 
@@ -61,7 +63,11 @@ You should see a `start` line and a `done` line. A line with `warning` in it nam
 /log/print where message~"class-complete"
 ```
 
-The import should print `Script file loaded and executed successfully`. On a reset mAP you should see few or no `exists or failed` lines. Tell the instructor about any `warning` line, and about any `exists or failed` line you can't explain.
+The import should print `Script file loaded and executed successfully`. On a reset mAP I expect few or no `exists or failed` lines. Tell the instructor about any `warning` line, and about any `exists or failed` line you can't explain.
+
+The last line of the log shows two counts, `warnings` and `exists-or-failed`. On a reset mAP a few `exists-or-failed` is normal. `warnings` should be `0`.
+
+> **Note:** If a `warning` line says `RoMON is NOT allowed by device-mode`, your mAP needs the device-mode update. In the mAP Terminal, run `/system/device-mode/update mode=advanced`, then within 5 minutes **tap** the **RESET/MODE** button once. Don't hold it. The mAP reboots. Then run `/tool/romon/print`, and you should see a `current-id` line. Lab 8 needs this.
 
 16. Reconnect through **Neighbors** at `192.168.89.1`. Set the password as in Lab 6.3, with the same password as your L009.
 
@@ -78,7 +84,7 @@ The import should print `Script file loaded and executed successfully`. On a res
 - Set your own password on `user2@mikrotik.test` in User Manager (Lab 5).
 - Set your own RADIUS secret on the `mikrotik-map-tunnel` router entry (Lab 7.4).
 - Add the WireGuard peer for your mAP, with the mAP's public key (Lab 6.8).
-- After your certificates exist, turn on HTTPS and give User Manager its certificate (Lab 3.4 and Lab 5). The script skips both until the certificates exist.
+- After your certificates exist, turn on HTTPS and give User Manager its certificate (Lab 3.4 and Lab 5). The script skips both until the certificates exist. The quick way is to upload `class-day1-end-l009-part2.rsc` and run `/import file-name=class-day1-end-l009-part2.rsc`. It skips anything already there and does both. Don't import `class-complete-l009.rsc` a second time, because it stops on a router that already has bridges.
 - Set your own passwords on `ftpwrite` and `ftpread` (Lab 15.6) and on `smbuser` (Lab 16.4).
 - Download `tftp-test.txt` and `lab-media-test.mp4` from the portal and put them on the USB drive (Labs 15 and 16). The TFTP and DLNA settings are already there.
 - Optional: replace the hotspot sign-in page with the redirect (Lab 17.2). The guest network is already set up, and until you replace the page, the hotspot's own sign-in form shows.
@@ -87,6 +93,28 @@ The import should print `Script file loaded and executed successfully`. On a res
 - Set your own fallback Wi-Fi key (the fallback password step in Lab 7).
 - Set the class Wi-Fi key in the `class-wifi` profile (Lab 13.4).
 - Set your own RADIUS secret, the same one as on the L009 (Lab 7.3).
+- Build the WireGuard tunnel (Lab 6.8).
+
+Record each new password in **Lab Notes**.
+
+**Not yet confirmed**
+- Most of it, for the whole files. Nobody has reset a student device and loaded these exact files. See the confirmed list at the end for what has run. Both were rebuilt Oct 8 from the instructor's setup files and exports of the bench routers. The mAP file's older version was imported once on the finished bench mAP. The L009 file has never been imported.
+- The L009 file's part 2 was written from the bench export and the Lab 15 to 17 steps, and none of its commands has run. The doubts: that `/ip/service/set ftp available-from=...` is accepted (the script falls back to `address=`), that `/user/add ... address=192.168.88.0/24` and `/user-manager/user/add ... password=` take those parameters, and that `/ip/media/add` and `/file/add name=usb1/media type=directory` work in a script on a freshly mounted drive.
+- The reset dialog's labels in WinBox 4.4 (**Reset Configuration**, **No Default Configuration**). They come from the old Lab 25.3.
+- That a reset keeps the packages, the device mode, and the USB format. My reading, from the setup file's header listing them as one-time steps.
+- What the USB drive holds after a reset, and whether the containers can be added again over what's already there.
+- That the reset L009 and mAP show in **Neighbors** by MAC address, and how long the reboots take.
+- Whether WinBox drops during the L009 import. The script puts **ether7** into a bridge.
+- Whether the laptop on **ETH2** reaches the reset mAP by MAC address. The setup file's header says to reconnect that way.
+- Whether the enterprise Wi-Fi logs in after the by-hand steps. The mAP's requests come from the tunnel address `10.255.255.2` and have to match the `mikrotik-map-tunnel` entry, so the tunnel has to exist first.
+- How long the whole procedure takes for one device, and for both.
+- The two portal buttons for the completed files exist, but the files aren't on the router until Day 2. Test both downloads after you upload them.
+
+**Confirmed on a kit (Oct 14)**
+- A reset keeps the device mode, the installed packages and the USB drive's format. The L009 and the mAP both kept their device mode through a reset, and the L009 imported its setup file cleanly afterwards.
+- Part 2 of the L009 file ran clean twice on a real L009, with no failed blocks. That includes the TFTP, FTP, SMB and DLNA blocks and the User Manager entries. The import prints a deprecation warning about the `address` keyword. Where it comes from is unknown, and nothing failed.
+- The guard that stops the L009 file on a router with bridges, the warning counter, and the check that reads RoMON from device-mode each ran on a router. The whole files have still not been imported.
+- `class-day1-end-l009-part2.rsc` downloads from the portal. Both `class-complete` files were uploaded to the router on Oct 14. Test their portal downloads once they are in `usb1/portal-content`.
 - Build the WireGuard tunnel (Lab 6.8).
 
 Record each new password in **Lab Notes**.
